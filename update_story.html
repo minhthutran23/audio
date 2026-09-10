@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cập nhật câu chuyện tiếng Trung</title>
+<style>
+  :root {
+    --paper: #FBF6EC;
+    --ink: #241F1A;
+    --ink-soft: #6b6255;
+    --seal: #B23A2E;
+    --seal-dark: #7C271E;
+    --gold: #B4892A;
+    --line: #E1D8C4;
+    --card: #FFFFFF;
+    --ok: #2F6B3E;
+    --ok-bg: #E9F3EA;
+    --err: #B23A2E;
+    --err-bg: #FBEAE7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 20px 80px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 720px; }
+  .mast {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    border-bottom: 3px solid var(--seal);
+    padding-bottom: 14px;
+    margin-bottom: 28px;
+  }
+  .mast .seal {
+    width: 40px; height: 40px;
+    background: var(--seal);
+    color: #fff;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .mast h1 { font-size: 22px; margin: 0; font-weight: 600; letter-spacing: 0.2px; }
+  .mast p { margin: 2px 0 0; color: var(--ink-soft); font-size: 13px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 15px; margin: 0 0 4px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold); color: #fff; font-size: 12px; font-weight: 700;
+  }
+  .card .hint { font-size: 13px; color: var(--ink-soft); margin: 0 0 14px; line-height: 1.5; }
+
+  label { display: block; font-size: 13px; color: var(--ink-soft); margin: 12px 0 4px; }
+  input[type=text], input[type=password], textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 9px 11px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fffdf9;
+    color: var(--ink);
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--gold); }
+  textarea { min-height: 200px; resize: vertical; line-height: 1.6; font-size: 15px; }
+
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+
+  .filebtn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px dashed var(--line);
+    padding: 8px 14px;
+    border-radius: 7px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .filebtn:hover { border-color: var(--gold); color: var(--ink); }
+  input[type=file] { display: none; }
+
+  .preview { margin-top: 14px; font-size: 13px; color: var(--ink-soft); }
+  .preview b { color: var(--ink); }
+  .preview-list {
+    margin-top: 8px; max-height: 160px; overflow-y: auto;
+    border: 1px solid var(--line); border-radius: 7px;
+  }
+  .preview-list div { padding: 6px 10px; font-size: 13px; border-bottom: 1px solid var(--line); }
+  .preview-list div:last-child { border-bottom: none; }
+  .preview-list .idx { color: var(--gold); font-weight: 600; margin-right: 6px; }
+  .preview-list .py { color: var(--ink-soft); margin-left: 6px; }
+
+  button.primary {
+    width: 100%;
+    background: var(--seal);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    letter-spacing: 0.2px;
+  }
+  button.primary:hover { background: var(--seal-dark); }
+  button.primary:disabled { background: #c9beac; cursor: not-allowed; }
+
+  button.secondary {
+    width: 100%;
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  button.secondary:hover { border-color: var(--gold); }
+
+  .steps {
+    margin-top: 16px;
+    display: none;
+  }
+  .steps.show { display: block; }
+  .step {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+  }
+  .step:last-child { border-bottom: none; }
+  .step .dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--line);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: transparent;
+  }
+  .step.pending .dot { border-color: var(--gold); }
+  .step.ok .dot { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .step.ok { color: var(--ink); }
+  .step.err .dot { background: var(--err); border-color: var(--err); color: #fff; }
+  .step.err { color: var(--err); }
+  .step.skip .dot { border-color: var(--line); background: var(--line); }
+
+  .status {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.6;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.ok { background: var(--ok-bg); color: var(--ok); }
+  .status.err { background: var(--err-bg); color: var(--err); }
+  .status a { color: inherit; font-weight: 600; }
+
+  .warn-box {
+    background: #FBF3E3;
+    border: 1px solid #E9D8A6;
+    color: #6b5620;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .warn-box b { color: #5a4718; }
+
+  footer { text-align: center; font-size: 12px; color: var(--ink-soft); margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <div class="seal">话</div>
+    <div>
+      <h1>Cập nhật câu chuyện tiếng Trung</h1>
+      <p>Chọn ảnh mới + câu thoại mới, bấm 1 nút là đẩy cả 2 lên GitHub</p>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <b>Về token GitHub:</b> Token bạn nhập bên dưới chỉ được trình duyệt của bạn dùng để gọi thẳng đến GitHub — không gửi qua bất kỳ máy chủ nào khác, không được lưu lại sau khi bạn đóng trang. Nên tạo <b>Fine-grained personal access token</b> (Settings → Developer settings → Personal access tokens → Fine-grained), giới hạn quyền cho đúng 1 repo, và bật 2 quyền: <b>Contents: Read and write</b> (để cập nhật file) và <b>Actions: Read and write</b> (để tự chạy workflow và tải kết quả). Đặt hạn dùng ngắn.
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>Thông tin repo</h2>
+    <p class="hint">Điền 1 lần, trình duyệt sẽ nhớ cho lần sau (lưu trong máy bạn, không lưu token).</p>
+    <div class="row">
+      <div>
+        <label>Tên tài khoản GitHub (owner)</label>
+        <input type="text" id="owner" placeholder="minhthutran23">
+      </div>
+      <div>
+        <label>Tên repo</label>
+        <input type="text" id="repo" placeholder="audio">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Nhánh (branch)</label>
+        <input type="text" id="branch" placeholder="main" value="main">
+      </div>
+      <div>
+        <label>Tên file workflow</label>
+        <input type="text" id="workflowFile" placeholder="generate-story.yml" value="generate-story.yml">
+      </div>
+    </div>
+    <label>Personal access token</label>
+    <input type="password" id="token" placeholder="github_pat_xxxxxxxx">
+    <label style="display:flex; align-items:center; gap:8px; margin-top:14px; cursor:pointer;">
+      <input type="checkbox" id="autoRun" checked style="width:auto;">
+      <span style="font-size:13px; color:var(--ink-soft);">Tự động chạy workflow và tải video sau khi cập nhật</span>
+    </label>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>Chọn file cần cập nhật</h2>
+    <p class="hint">Chọn 1 lúc cả file zip ảnh và file câu thoại (.txt/.csv) — kéo thả hoặc bấm để chọn nhiều file cùng lúc, tên file trên máy bạn đặt gì cũng được, hệ thống tự nhận diện theo đuôi file. Nếu chỉ muốn cập nhật 1 loại, chọn đúng 1 file thôi cũng được.</p>
+    <label class="filebtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
+      📁 Chọn file (giữ Ctrl/Cmd để chọn nhiều file)
+      <input type="file" id="combinedInput" accept=".zip,.txt,.csv" multiple>
+    </label>
+    <div class="preview" id="combinedPreview" style="display:none"></div>
+    <button class="secondary" id="previewBtn" style="margin-top:10px">👁️ Xem trước phụ đề</button>
+    <div id="previewPanel" style="display:none; margin-top:14px; text-align:center;">
+      <canvas id="previewCanvas" style="max-width:100%; border:1px solid var(--line); border-radius:8px;"></canvas>
+      <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:10px;">
+        <button class="secondary" id="prevSceneBtn" style="width:auto; padding:8px 14px;">◀ Trước</button>
+        <span id="sceneIndicator" style="font-size:13px; color:var(--ink-soft);">Cảnh 1/30</span>
+        <button class="secondary" id="nextSceneBtn" style="width:auto; padding:8px 14px;">Sau ▶</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:16px">
+      <div>
+        <label>Đường dẫn ảnh trong repo</label>
+        <input type="text" id="imagePath" placeholder="batch_images.zip" value="batch_images.zip">
+      </div>
+      <div>
+        <label>Đường dẫn câu thoại trong repo</label>
+        <input type="text" id="path" placeholder="dialogue_data.py" value="dialogue_data.py">
+      </div>
+    </div>
+
+    <details style="margin-top:14px">
+      <summary>Hoặc dán / sửa tay nội dung câu thoại ở đây</summary>
+      <textarea id="lines" style="margin-top:8px" placeholder="早上七点，闹钟响了。,Zǎoshang qī diǎn, nàozhōng xiǎng le.
+我很累。,Wǒ hěn lèi.
+现在几点?,Xiànzài jǐ diǎn?"></textarea>
+      <div class="preview" id="previewWrap" style="display:none">
+        <span><b id="lineCount">0</b> dòng được nhận diện</span>
+        <div class="preview-list" id="previewList"></div>
+      </div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>Cập nhật script (tuỳ chọn)</h2>
+    <p class="hint">Dùng khi bạn sửa <code>generate_audio.py</code>, <code>make_video.py</code>, <code>dialogue_data.py</code>, file workflow, hoặc bất kỳ file nào khác — chọn file trên máy, nó sẽ lưu vào repo đúng tên file đó (đè lên bản cũ). Chọn nhiều file cùng lúc được (giữ Ctrl/Cmd).</p>
+    <label class="filebtn" style="display:flex; justify-content:center; padding:18px; font-size:14px;">
+      🧩 Chọn file script cần cập nhật
+      <input type="file" id="scriptInput" multiple>
+    </label>
+    <div class="preview" id="scriptPreview" style="display:none"></div>
+    <label style="margin-top:10px">Thư mục đích trong repo cho các file khác (để trống = gốc repo). Riêng file <code>.yml</code>/<code>.yaml</code> sẽ tự động lưu vào <code>.github/workflows/</code>, không cần điền gì.</label>
+    <input type="text" id="scriptTargetDir" placeholder="(để trống = gốc repo)">
+  </div>
+
+  <button class="primary" id="pushAllBtn">Cập nhật + chạy + tải video</button>
+  <button class="secondary" id="downloadBtn">Chỉ tải file dialogue_data.py về máy (không đẩy lên GitHub)</button>
+
+  <div class="steps" id="steps">
+    <div class="step" id="step-img"><span class="dot"></span><span class="label">Cập nhật ảnh</span></div>
+    <div class="step" id="step-txt"><span class="dot"></span><span class="label">Cập nhật câu thoại</span></div>
+    <div class="step" id="step-script"><span class="dot"></span><span class="label">Cập nhật script</span></div>
+    <div class="step" id="step-run"><span class="dot"></span><span class="label">Chạy workflow</span></div>
+    <div class="step" id="step-dl"><span class="dot"></span><span class="label">Tải kết quả</span></div>
+  </div>
+  <div class="status" id="status"></div>
+
+  <footer>Token chỉ dùng trong trình duyệt của bạn, không gửi đi đâu khác.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+
+["owner","repo","branch","path","imagePath"].forEach(id => {
+  const saved = localStorage.getItem("dlg_" + id);
+  if (saved) $(id).value = saved;
+  $(id).addEventListener("input", () => localStorage.setItem("dlg_" + id, $(id).value));
+});
+
+function escapeHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function parseLines(raw) {
+  return raw.split("\n")
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .map((l, i) => {
+      const parts = l.split(",");
+      const hanzi = (parts[0] || "").trim();
+      const pinyin = parts.slice(1).join(",").trim();
+      const num = String(i + 1).padStart(2, "0");
+      return { num, hanzi, pinyin };
+    });
+}
+
+function renderPreview() {
+  const scenes = parseLines($("lines").value);
+  $("lineCount").textContent = scenes.length;
+  $("previewWrap").style.display = scenes.length ? "block" : "none";
+  $("previewList").innerHTML = scenes.map(s =>
+    `<div><span class="idx">${s.num}</span>${escapeHtml(s.hanzi)}<span class="py">${escapeHtml(s.pinyin)}</span></div>`
+  ).join("");
+}
+$("lines").addEventListener("input", renderPreview);
+$("lines").addEventListener("input", () => {
+  if ($("previewPanel").style.display !== "none") renderSubtitlePreview(previewIndex);
+});
+
+let previewImages = [];
+let previewIndex = 0;
+
+function extractSceneNumber(filename) {
+  const m = filename.match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : Infinity;
+}
+
+async function loadZipImages(file) {
+  const zip = await JSZip.loadAsync(file);
+  const entries = [];
+  zip.forEach((relPath, entry) => {
+    if (!entry.dir && /\.(png|jpe?g)$/i.test(entry.name)) entries.push(entry);
+  });
+  entries.sort((a, b) => extractSceneNumber(a.name) - extractSceneNumber(b.name));
+  const images = [];
+  for (const entry of entries) {
+    const blob = await entry.async("blob");
+    images.push({ name: entry.name, url: URL.createObjectURL(blob) });
+  }
+  return images;
+}
+
+function drawSubtitleOnCanvas(ctx, W, H, hanzi, pinyin) {
+  if (!hanzi && !pinyin) return;
+  const hanziSize = Math.max(6, Math.floor(W / 45));
+  const pinyinSize = Math.max(4, Math.floor(W / 70));
+  const fontStack = `"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif`;
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  const padding = 5;
+  const boxH = hanziSize + pinyinSize + padding * 3;
+  const boxTop = H - boxH - 10;
+
+  ctx.fillStyle = "rgba(0,0,0,0.59)";
+  ctx.fillRect(0, boxTop, W, H - 10 - boxTop);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `${hanziSize}px ${fontStack}`;
+  ctx.fillText(hanzi, W / 2, boxTop + padding);
+
+  ctx.fillStyle = "rgb(255,221,130)";
+  ctx.font = `${pinyinSize}px ${fontStack}`;
+  ctx.fillText(pinyin, W / 2, boxTop + padding * 2 + hanziSize);
+}
+
+const TARGET_WIDTH = 720; // phai khop voi TARGET_WIDTH trong make_video.py
+
+function renderSubtitlePreview(index) {
+  if (!previewImages.length) return;
+  const scenes = parseLines($("lines").value);
+  const item = previewImages[index];
+  const img = new Image();
+  img.onload = () => {
+    let drawW = img.width;
+    let drawH = img.height;
+    if (drawW < TARGET_WIDTH) {
+      const ratio = TARGET_WIDTH / drawW;
+      drawW = TARGET_WIDTH;
+      drawH = Math.round(img.height * ratio);
+    }
+    const canvas = $("previewCanvas");
+    canvas.width = drawW;
+    canvas.height = drawH;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, drawW, drawH);
+    const scene = scenes[index];
+    if (scene) drawSubtitleOnCanvas(ctx, drawW, drawH, scene.hanzi, scene.pinyin);
+  };
+  img.src = item.url;
+  $("sceneIndicator").textContent = `Cảnh ${index + 1}/${previewImages.length} — ${item.name}`;
+}
+
+$("previewBtn").addEventListener("click", async () => {
+  if (!selectedZipFile) {
+    showStatus("err", "Chưa chọn file zip ảnh để xem trước.");
+    return;
+  }
+  const btn = $("previewBtn");
+  btn.disabled = true;
+  btn.textContent = "Đang tải ảnh...";
+  try {
+    previewImages = await loadZipImages(selectedZipFile);
+    if (!previewImages.length) throw new Error("Không tìm thấy ảnh (.png/.jpg) nào trong file zip.");
+    previewIndex = 0;
+    $("previewPanel").style.display = "block";
+    renderSubtitlePreview(previewIndex);
+  } catch (err) {
+    showStatus("err", "Xem trước thất bại: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "👁️ Xem trước phụ đề";
+  }
+});
+
+$("prevSceneBtn").addEventListener("click", () => {
+  if (!previewImages.length) return;
+  previewIndex = (previewIndex - 1 + previewImages.length) % previewImages.length;
+  renderSubtitlePreview(previewIndex);
+});
+
+$("nextSceneBtn").addEventListener("click", () => {
+  if (!previewImages.length) return;
+  previewIndex = (previewIndex + 1) % previewImages.length;
+  renderSubtitlePreview(previewIndex);
+});
+
+let selectedZipFile = null;
+
+function readTextFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => resolve(ev.target.result);
+    reader.onerror = reject;
+    reader.readAsText(file, "UTF-8");
+  });
+}
+
+let selectedScriptFiles = [];
+
+$("scriptInput").addEventListener("change", (e) => {
+  selectedScriptFiles = Array.from(e.target.files || []);
+  const wrap = $("scriptPreview");
+  if (selectedScriptFiles.length) {
+    wrap.style.display = "block";
+    wrap.innerHTML = selectedScriptFiles.map(f => {
+      const isWorkflow = /\.(yml|yaml)$/i.test(f.name);
+      const dest = isWorkflow ? `.github/workflows/${f.name}` : f.name;
+      return `🧩 <b>${escapeHtml(f.name)}</b> → sẽ lưu vào <code>${escapeHtml(dest)}</code>`;
+    }).join("<br>");
+  } else {
+    wrap.style.display = "none";
+  }
+});
+
+$("combinedInput").addEventListener("change", async (e) => {
+  const files = Array.from(e.target.files || []);
+  let zipFile = null;
+  let textFile = null;
+
+  for (const f of files) {
+    const ext = f.name.split(".").pop().toLowerCase();
+    if (ext === "zip") {
+      zipFile = f;
+    } else if (ext === "txt" || ext === "csv") {
+      textFile = f;
+    }
+  }
+
+  const messages = [];
+
+  if (zipFile) {
+    selectedZipFile = zipFile;
+    previewImages = [];
+    $("previewPanel").style.display = "none";
+    const sizeMB = (zipFile.size / (1024 * 1024)).toFixed(2);
+    messages.push(`🖼️ Ảnh: <b>${escapeHtml(zipFile.name)}</b> (${sizeMB} MB)`);
+  }
+
+  if (textFile) {
+    const text = await readTextFile(textFile);
+    $("lines").value = text;
+    renderPreview();
+    const count = parseLines(text).length;
+    messages.push(`📄 Câu thoại: <b>${escapeHtml(textFile.name)}</b> (${count} dòng)`);
+  }
+
+  const unrecognized = files.filter(f => f !== zipFile && f !== textFile);
+  if (unrecognized.length) {
+    messages.push(`⚠️ Không nhận diện được: ${unrecognized.map(f => escapeHtml(f.name)).join(", ")} (chỉ hỗ trợ .zip, .txt, .csv)`);
+  }
+
+  const wrap = $("combinedPreview");
+  if (messages.length) {
+    wrap.style.display = "block";
+    wrap.innerHTML = messages.join("<br>");
+  } else {
+    wrap.style.display = "none";
+  }
+});
+
+function buildPythonFile(scenes) {
+  const header = `# -*- coding: utf-8 -*-
+"""
+Du lieu kich ban dung chung: moi canh gom (so thu tu, chu Han, pinyin).
+File nay duoc cap nhat tu trang web "Cap nhat cau chuyen tieng Trung".
+"""
+
+SCENES = [
+`;
+  const body = scenes.map(s => {
+    const hanzi = s.hanzi.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const pinyin = s.pinyin.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return `    ("${s.num}", "${hanzi}", "${pinyin}"),`;
+  }).join("\n");
+  return header + body + "\n]\n";
+}
+
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function readFileAsArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function githubRequest(url, token, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    cache: "no-store",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json",
+      ...(options.headers || {})
+    }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || `Lỗi không rõ (mã ${res.status})`);
+  return data;
+}
+
+function setStep(id, state) {
+  const el = $(id);
+  el.className = "step " + state;
+}
+
+function setStepLabel(id, text) {
+  $(id).querySelector(".label").textContent = text;
+}
+
+function showStatus(kind, html) {
+  const el = $("status");
+  el.className = "status show " + kind;
+  el.innerHTML = html;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function triggerWorkflow(owner, repo, branch, token, workflowFile) {
+  const dispatchTime = new Date();
+  await githubRequest(
+    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflowFile)}/dispatches`,
+    token,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ref: branch }) }
+  );
+  return dispatchTime;
+}
+
+async function findNewRun(owner, repo, branch, token, workflowFile, afterTime) {
+  for (let i = 0; i < 12; i++) {
+    await sleep(2500);
+    const data = await githubRequest(
+      `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${encodeURIComponent(workflowFile)}/runs?branch=${encodeURIComponent(branch)}&per_page=5`,
+      token
+    );
+    const run = (data.workflow_runs || []).find(r => new Date(r.created_at).getTime() >= afterTime.getTime() - 5000);
+    if (run) return run;
+  }
+  throw new Error("Không tìm thấy lần chạy mới sau khi kích hoạt workflow (đợi hơi lâu, thử vào tab Actions kiểm tra tay).");
+}
+
+async function pollRunUntilDone(owner, repo, runId, token, onProgress) {
+  const start = Date.now();
+  const maxWaitMs = 10 * 60 * 1000;
+  while (Date.now() - start < maxWaitMs) {
+    const run = await githubRequest(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}`, token);
+    onProgress(run);
+    if (run.status === "completed") return run;
+    await sleep(5000);
+  }
+  throw new Error("Chờ quá lâu (hơn 10 phút) mà workflow chưa chạy xong.");
+}
+
+async function fetchArtifacts(owner, repo, runId, token) {
+  const data = await githubRequest(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}/artifacts`, token);
+  const results = [];
+  for (const art of (data.artifacts || [])) {
+    const res = await fetch(art.archive_download_url, {
+      headers: { "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json" }
+    });
+    if (!res.ok) continue;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    results.push({ name: art.name, url });
+  }
+  return results;
+}
+
+// ---- Cap nhat file text nho (dialogue) qua Contents API ----
+async function pushGenericFile(owner, repo, branch, token, path, content) {
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  let sha;
+  try {
+    const existing = await githubRequest(`${apiUrl}?ref=${encodeURIComponent(branch)}`, token);
+    sha = existing.sha;
+  } catch (e) { /* file chua ton tai, se tao moi */ }
+
+  const body = {
+    message: `Cập nhật ${path} qua trang web`,
+    content: utf8ToBase64(content),
+    branch
+  };
+  if (sha) body.sha = sha;
+
+  const result = await githubRequest(apiUrl, token, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return { path, commitUrl: result.commit && result.commit.html_url };
+}
+
+async function pushAllScriptFiles(owner, repo, branch, token) {
+  if (!selectedScriptFiles.length) return { skipped: true };
+  const targetDir = $("scriptTargetDir").value.trim();
+  const prefix = targetDir ? (targetDir.endsWith("/") ? targetDir : targetDir + "/") : "";
+  const results = [];
+  const errors = [];
+  for (const file of selectedScriptFiles) {
+    try {
+      const content = await readTextFile(file);
+      const isWorkflowFile = /\.(yml|yaml)$/i.test(file.name);
+      const path = isWorkflowFile ? `.github/workflows/${file.name}` : (prefix + file.name);
+      const r = await pushGenericFile(owner, repo, branch, token, path, content);
+      results.push(r);
+    } catch (err) {
+      errors.push(`${file.name}: ${err.message}`);
+    }
+  }
+  if (!results.length && errors.length) {
+    throw new Error(errors.join(" | "));
+  }
+  return { skipped: false, files: results, errors: errors.length ? errors : undefined };
+}
+
+async function pushDialogue(owner, repo, branch, token) {
+  const path = $("path").value.trim() || "dialogue_data.py";
+  const scenes = parseLines($("lines").value);
+  if (!scenes.length) return { skipped: true };
+
+  const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  let sha;
+  try {
+    const existing = await githubRequest(`${apiUrl}?ref=${encodeURIComponent(branch)}`, token);
+    sha = existing.sha;
+  } catch (e) { /* file chua ton tai, khong sao */ }
+
+  const content = buildPythonFile(scenes);
+  const body = {
+    message: `Cập nhật câu chuyện (${scenes.length} cảnh) qua trang web`,
+    content: utf8ToBase64(content),
+    branch
+  };
+  if (sha) body.sha = sha;
+
+  const result = await githubRequest(apiUrl, token, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  return { skipped: false, count: scenes.length, path, commitUrl: result.commit && result.commit.html_url };
+}
+
+// ---- Cap nhat file zip anh (lon) qua Git Data API ----
+async function pushImages(owner, repo, branch, token) {
+  if (!selectedZipFile) return { skipped: true };
+  const imagePath = $("imagePath").value.trim() || "batch_images.zip";
+  const base = `https://api.github.com/repos/${owner}/${repo}`;
+
+  const buffer = await readFileAsArrayBuffer(selectedZipFile);
+  const base64Content = arrayBufferToBase64(buffer);
+
+  const blob = await githubRequest(`${base}/git/blobs`, token, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content: base64Content, encoding: "base64" })
+  });
+
+  const maxAttempts = 4;
+  let lastErr;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const ref = await githubRequest(`${base}/git/ref/heads/${encodeURIComponent(branch)}`, token);
+      const currentCommitSha = ref.object.sha;
+      const currentCommit = await githubRequest(`${base}/git/commits/${currentCommitSha}`, token);
+      const baseTreeSha = currentCommit.tree.sha;
+
+      const newTree = await githubRequest(`${base}/git/trees`, token, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          base_tree: baseTreeSha,
+          tree: [{ path: imagePath, mode: "100644", type: "blob", sha: blob.sha }]
+        })
+      });
+
+      const newCommit = await githubRequest(`${base}/git/commits`, token, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `Cập nhật ảnh (${selectedZipFile.name}) qua trang web`,
+          tree: newTree.sha,
+          parents: [currentCommitSha]
+        })
+      });
+
+      await githubRequest(`${base}/git/refs/heads/${encodeURIComponent(branch)}`, token, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sha: newCommit.sha })
+      });
+
+      return { skipped: false, path: imagePath, commitUrl: newCommit.html_url };
+    } catch (err) {
+      lastErr = err;
+      const isRaceCondition = /fast forward|not a fast/i.test(err.message || "");
+      if (isRaceCondition && attempt < maxAttempts) {
+        await sleep(800 * attempt);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
+$("downloadBtn").addEventListener("click", () => {
+  const scenes = parseLines($("lines").value);
+  if (!scenes.length) { showStatus("err", "Chưa có dòng câu thoại nào để tạo file."); return; }
+  const content = buildPythonFile(scenes);
+  const blob = new Blob([content], { type: "text/x-python" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = $("path").value || "dialogue_data.py";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+$("pushAllBtn").addEventListener("click", async () => {
+  const owner = $("owner").value.trim();
+  const repo = $("repo").value.trim();
+  const branch = $("branch").value.trim() || "main";
+  const token = $("token").value.trim();
+
+  if (!owner || !repo || !token) {
+    showStatus("err", "Điền đủ tên tài khoản, tên repo, và token ở mục 1 trước đã.");
+    return;
+  }
+  if (!selectedZipFile && !parseLines($("lines").value).length && !selectedScriptFiles.length) {
+    showStatus("err", "Chưa chọn ảnh, câu thoại, hay file script nào để cập nhật.");
+    return;
+  }
+
+  const btn = $("pushAllBtn");
+  btn.disabled = true;
+  btn.textContent = "Đang cập nhật...";
+  $("steps").className = "steps show";
+  setStep("step-img", selectedZipFile ? "pending" : "skip");
+  setStep("step-txt", parseLines($("lines").value).length ? "pending" : "skip");
+  setStep("step-script", selectedScriptFiles.length ? "pending" : "skip");
+  showStatus("ok", "Đang kết nối tới GitHub...");
+
+  const results = { img: null, txt: null, script: null };
+  let hadError = false;
+
+  try {
+    if (selectedZipFile) {
+      const r = await pushImages(owner, repo, branch, token);
+      results.img = r;
+      setStep("step-img", "ok");
+    }
+  } catch (err) {
+    setStep("step-img", "err");
+    hadError = true;
+    results.img = { error: err.message };
+  }
+
+  try {
+    if (parseLines($("lines").value).length) {
+      const r = await pushDialogue(owner, repo, branch, token);
+      results.txt = r;
+      setStep("step-txt", "ok");
+    }
+  } catch (err) {
+    setStep("step-txt", "err");
+    hadError = true;
+    results.txt = { error: err.message };
+  }
+
+  try {
+    if (selectedScriptFiles.length) {
+      const r = await pushAllScriptFiles(owner, repo, branch, token);
+      results.script = r;
+      setStep("step-script", "ok");
+    }
+  } catch (err) {
+    setStep("step-script", "err");
+    hadError = true;
+    results.script = { error: err.message };
+  }
+
+  let html = "";
+  if (results.img && !results.img.error && !results.img.skipped) {
+    html += `Ảnh đã cập nhật vào <b>${results.img.path}</b>. `;
+    if (results.img.commitUrl) html += `<a href="${results.img.commitUrl}" target="_blank">Xem commit</a><br>`;
+  }
+  if (results.img && results.img.error) {
+    html += `Cập nhật ảnh thất bại: ${results.img.error}<br>`;
+  }
+  if (results.txt && !results.txt.error && !results.txt.skipped) {
+    html += `${results.txt.count} câu thoại đã cập nhật vào <b>${results.txt.path}</b>. `;
+    if (results.txt.commitUrl) html += `<a href="${results.txt.commitUrl}" target="_blank">Xem commit</a><br>`;
+  }
+  if (results.txt && results.txt.error) {
+    html += `Cập nhật câu thoại thất bại: ${results.txt.error}<br>`;
+  }
+  if (results.script && !results.script.error && !results.script.skipped) {
+    html += `Đã cập nhật ${results.script.files.length} file script: ${results.script.files.map(f => f.path).join(", ")}<br>`;
+    if (results.script.errors && results.script.errors.length) {
+      html += `Riêng những file này bị lỗi: ${results.script.errors.join(" | ")}<br>`;
+      hadError = true;
+    }
+  }
+  if (results.script && results.script.error) {
+    html += `Cập nhật script thất bại: ${results.script.error}<br>`;
+  }
+  showStatus(hadError ? "err" : "ok", html || "Không có gì để cập nhật.");
+
+  const autoRun = $("autoRun").checked;
+  const workflowFile = $("workflowFile").value.trim() || "generate-story.yml";
+
+  if (!autoRun) {
+    html += "Giờ vào tab Actions trên GitHub để chạy workflow.";
+    showStatus(hadError ? "err" : "ok", html);
+    btn.disabled = false;
+    btn.textContent = "Cập nhật + chạy + tải video";
+    return;
+  }
+
+  // ---- Tu dong kich hoat workflow, theo doi tien trinh, tai ket qua ----
+  setStep("step-run", "pending");
+  setStep("step-dl", "pending");
+
+  try {
+    setStepLabel("step-run", "Đang kích hoạt workflow...");
+    btn.textContent = "Đang chạy workflow...";
+    const dispatchTime = await triggerWorkflow(owner, repo, branch, token, workflowFile);
+
+    setStepLabel("step-run", "Đang tìm lần chạy vừa kích hoạt...");
+    const run = await findNewRun(owner, repo, branch, token, workflowFile, dispatchTime);
+
+    const finalRun = await pollRunUntilDone(owner, repo, run.id, token, (r) => {
+      const statusText = r.status === "queued" ? "đang chờ..." : r.status === "in_progress" ? "đang chạy..." : r.status;
+      setStepLabel("step-run", `Workflow ${statusText}`);
+    });
+
+    if (finalRun.conclusion !== "success") {
+      setStep("step-run", "err");
+      setStep("step-dl", "skip");
+      html += `Workflow chạy xong nhưng bị lỗi (${finalRun.conclusion}). <a href="${finalRun.html_url}" target="_blank">Xem log lỗi</a><br>`;
+      showStatus("err", html);
+      btn.disabled = false;
+      btn.textContent = "Cập nhật + chạy + tải video";
+      return;
+    }
+
+    setStep("step-run", "ok");
+    setStepLabel("step-run", "Chạy workflow");
+    setStepLabel("step-dl", "Đang tải kết quả...");
+    btn.textContent = "Đang tải kết quả...";
+
+    const artifacts = await fetchArtifacts(owner, repo, finalRun.id, token);
+    setStep("step-dl", "ok");
+
+    if (artifacts.length) {
+      html += "Hoàn tất! Tải kết quả: ";
+      html += artifacts.map(a => `<a href="${a.url}" download="${a.name}.zip">${a.name}</a>`).join(" · ");
+      html += `<br><a href="${finalRun.html_url}" target="_blank">Xem chi tiết trên GitHub</a>`;
+    } else {
+      html += `Workflow chạy xong nhưng không thấy artifact nào. <a href="${finalRun.html_url}" target="_blank">Xem trên GitHub</a>`;
+    }
+    showStatus("ok", html);
+  } catch (err) {
+    setStep("step-run", "err");
+    setStep("step-dl", "skip");
+    html += `Không tự chạy/tải được: ${err.message}<br>Vào tab Actions trên GitHub để chạy tay và tải kết quả.`;
+    showStatus("err", html);
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Cập nhật + chạy + tải video";
+});
+</script>
+</body>
+</html>
