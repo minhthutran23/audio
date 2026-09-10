@@ -72,8 +72,8 @@ def add_subtitle(image_path, hanzi, pinyin, out_path):
     W, H = img.size
     draw = ImageDraw.Draw(img, "RGBA")
 
-    hanzi_size = max(28, W // 14)
-    pinyin_size = max(18, W // 22)
+    hanzi_size = max(20, W // 20)
+    pinyin_size = max(13, W // 32)
 
     if FONT_PATH:
         font_hanzi = ImageFont.truetype(FONT_PATH, hanzi_size)
