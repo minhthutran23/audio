@@ -14,6 +14,7 @@ Chay:    python make_video.py
 """
 
 import os
+import re
 import shutil
 import subprocess
 from PIL import Image, ImageDraw, ImageFont
@@ -109,10 +110,18 @@ def get_looped_audio(path, duration):
     return looped.subclipped(0, duration)
 
 
-image_files = sorted([
-    f for f in os.listdir(IMAGE_DIR)
-    if f.lower().endswith((".png", ".jpg", ".jpeg"))
-])
+def extract_scene_number(filename):
+    """Lay so dau tien trong ten file de sap xep dung thu tu canh
+    (vd: image_2_2_xxx.jpeg -> 2), thay vi sap theo chu cai
+    (se bi lech: 1, 10, 11 ... 19, 2, 20 ...)."""
+    match = re.search(r"(\d+)", filename)
+    return int(match.group(1)) if match else float("inf")
+
+
+image_files = sorted(
+    [f for f in os.listdir(IMAGE_DIR) if f.lower().endswith((".png", ".jpg", ".jpeg"))],
+    key=extract_scene_number,
+)
 
 clips = []
 
