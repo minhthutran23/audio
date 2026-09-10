@@ -222,7 +222,13 @@ else:
     else:
         print("Khong co file nhac nen (background_music.mp3) - bo qua, chi dung loi thoai.")
 
-    final.write_videofile(OUTPUT_FILE, fps=24)
+    final.write_videofile(
+        OUTPUT_FILE,
+        fps=24,
+        codec="libx264",
+        audio_codec="aac",
+        ffmpeg_params=["-pix_fmt", "yuv420p"],
+    )
     print(f"\nHoan tat! Video da luu tai: {OUTPUT_FILE}")
 
     shutil.rmtree(TEMP_DIR, ignore_errors=True)
