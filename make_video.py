@@ -158,6 +158,10 @@ def add_subtitle(image_path, hanzi, pinyin, out_path):
     draw.text((W / 2, start_y + hh / 2), hanzi, font=font_hanzi, fill=(255, 255, 255, 255), anchor="mm")
     draw.text((W / 2, start_y + hh + line_gap + ph / 2), pinyin, font=font_pinyin, fill=(255, 221, 130, 255), anchor="mm")
 
+    # libx264 bat buoc chieu rong/cao phai la SO CHAN, cat bot 1px neu le
+    if img.width % 2 != 0 or img.height % 2 != 0:
+        img = img.crop((0, 0, img.width - (img.width % 2), img.height - (img.height % 2)))
+
     img.save(out_path)
 
 
