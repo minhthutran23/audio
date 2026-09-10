@@ -388,9 +388,12 @@ async function loadZipImages(file) {
   return images;
 }
 
-const SHEET_ROWS = 5;   // phai khop voi ROWS trong crop_grid.py
-const SHEET_COLS = 6;   // phai khop voi COLS trong crop_grid.py
-const SHEET_BORDER_TRIM = 2;
+const SHEET_ROWS = 5;            // phai khop voi ROWS trong crop_grid.py
+const SHEET_COLS = 6;            // phai khop voi COLS trong crop_grid.py
+const SHEET_INSET = 3;           // phai khop voi INSET trong crop_grid.py
+const SHEET_BLACK_THRESH = 100;  // phai khop voi BLACK_THRESH trong crop_grid.py
+const SHEET_LINE_FRAC_THRESH = 0.9;
+const SHEET_SEARCH_WINDOW_FRAC = 0.22;
 
 function loadImageFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -401,20 +404,83 @@ function loadImageFromFile(file) {
   });
 }
 
+function refineLinesJs(frac, n, totalLen, thresh) {
+  const even = [];
+  for (let i = 0; i <= n; i++) even.push(Math.round((i * totalLen) / n));
+  const window = Math.floor((totalLen / n) * SHEET_SEARCH_WINDOW_FRAC);
+  const result = [0];
+  for (let i = 1; i < n; i++) {
+    const guess = even[i];
+    const lo = Math.max(0, guess - window);
+    const hi = Math.min(totalLen, guess + window);
+    let bestVal = -1, bestIdx = guess;
+    for (let x = lo; x < hi; x++) {
+      if (frac[x] > bestVal) { bestVal = frac[x]; bestIdx = x; }
+    }
+    result.push(bestVal >= thresh ? bestIdx : guess);
+  }
+  result.push(totalLen);
+  return result;
+}
+
+function findGridLinesJs(grayData, W, H) {
+  const black = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) black[i] = grayData[i] < SHEET_BLACK_THRESH ? 1 : 0;
+
+  const rowFrac = new Float32Array(H);
+  for (let y = 0; y < H; y++) {
+    let sum = 0;
+    for (let x = 0; x < W; x++) sum += black[y * W + x];
+    rowFrac[y] = sum / W;
+  }
+  const rowLines = refineLinesJs(rowFrac, SHEET_ROWS, H, SHEET_LINE_FRAC_THRESH);
+
+  const colLinesPerRow = [];
+  for (let r = 0; r < SHEET_ROWS; r++) {
+    let y0 = rowLines[r] + 8;
+    let y1 = rowLines[r + 1] - 8;
+    if (y1 <= y0) { y0 = rowLines[r]; y1 = rowLines[r + 1]; }
+    const bandH = y1 - y0;
+    const colFrac = new Float32Array(W);
+    for (let x = 0; x < W; x++) {
+      let sum = 0;
+      for (let y = y0; y < y1; y++) sum += black[y * W + x];
+      colFrac[x] = bandH > 0 ? sum / bandH : 0;
+    }
+    colLinesPerRow.push(refineLinesJs(colFrac, SHEET_COLS, W, SHEET_LINE_FRAC_THRESH));
+  }
+
+  return { rowLines, colLinesPerRow };
+}
+
 async function cropCombinedSheet(file) {
   const img = await loadImageFromFile(file);
   const W = img.width, H = img.height;
-  const cellW = W / SHEET_COLS;
-  const cellH = H / SHEET_ROWS;
+
+  const fullCanvas = document.createElement("canvas");
+  fullCanvas.width = W;
+  fullCanvas.height = H;
+  const fullCtx = fullCanvas.getContext("2d");
+  fullCtx.drawImage(img, 0, 0);
+  const imageData = fullCtx.getImageData(0, 0, W, H).data;
+
+  const gray = new Uint8ClampedArray(W * H);
+  for (let i = 0; i < W * H; i++) {
+    const r = imageData[i * 4], g = imageData[i * 4 + 1], b = imageData[i * 4 + 2];
+    gray[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+  }
+
+  const { rowLines, colLinesPerRow } = findGridLinesJs(gray, W, H);
+
   const images = [];
   let count = 0;
   for (let row = 0; row < SHEET_ROWS; row++) {
     for (let col = 0; col < SHEET_COLS; col++) {
       count++;
-      const left = Math.round(col * cellW) + SHEET_BORDER_TRIM;
-      const top = Math.round(row * cellH) + SHEET_BORDER_TRIM;
-      const right = Math.round((col + 1) * cellW) - SHEET_BORDER_TRIM;
-      const bottom = Math.round((row + 1) * cellH) - SHEET_BORDER_TRIM;
+      const top = rowLines[row] + SHEET_INSET;
+      const bottom = rowLines[row + 1] - SHEET_INSET;
+      const left = colLinesPerRow[row][col] + SHEET_INSET;
+      const right = colLinesPerRow[row][col + 1] - SHEET_INSET;
       const cw = right - left, ch = bottom - top;
 
       // Ep ve dung 16:9 bang cach cat giua, giong FORCE_ASPECT_169 trong crop_grid.py
@@ -430,6 +496,7 @@ async function cropCombinedSheet(file) {
         sy = top + Math.floor((ch - newH) / 2);
         sh = newH;
       }
+
 
       const canvas = document.createElement("canvas");
       canvas.width = sw;
