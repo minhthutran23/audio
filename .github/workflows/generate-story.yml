@@ -1,0 +1,41 @@
+name: Generate Story Audio & Video
+
+on:
+  workflow_dispatch:   # bấm nút "Run workflow" thủ công trong tab Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install gTTS moviepy
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Generate audio (Chinese TTS)
+        run: python generate_audio.py
+
+      - name: Build story video
+        run: python make_video.py
+
+      - name: Upload audio files
+        uses: actions/upload-artifact@v4
+        with:
+          name: audio
+          path: audio/
+
+      - name: Upload final video
+        uses: actions/upload-artifact@v4
+        with:
+          name: story_video
+          path: story_video.mp4
