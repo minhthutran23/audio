@@ -25,7 +25,10 @@ jobs:
       - name: Extract images from zip
         run: |
           mkdir -p images
-          unzip -o batch_images.zip -d images
+          rm -rf images_tmp
+          unzip -o batch_images.zip -d images_tmp
+          find images_tmp -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) -exec mv {} images/ \;
+          rm -rf images_tmp
 
       - name: Generate audio (Chinese TTS)
         run: python generate_audio.py
