@@ -217,8 +217,8 @@
   <div class="card">
     <h2><span class="num">1</span>Ảnh &amp; câu thoại</h2>
     <label class="filebtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
-      📁 Chọn file (zip ảnh + .txt/.csv câu thoại, giữ Ctrl/Cmd để chọn nhiều)
-      <input type="file" id="combinedInput" accept=".zip,.txt,.csv" multiple>
+      📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)
+      <input type="file" id="combinedInput" accept=".zip,.txt,.csv,.png,.jpg,.jpeg" multiple>
     </label>
     <div class="preview" id="combinedPreview" style="display:none"></div>
     <button class="secondary" id="previewBtn" style="margin-top:10px">👁️ Xem trước phụ đề</button>
@@ -371,6 +371,63 @@ async function loadZipImages(file) {
   return images;
 }
 
+const SHEET_ROWS = 5;   // phai khop voi ROWS trong crop_grid.py
+const SHEET_COLS = 6;   // phai khop voi COLS trong crop_grid.py
+const SHEET_BORDER_TRIM = 2;
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function cropCombinedSheet(file) {
+  const img = await loadImageFromFile(file);
+  const W = img.width, H = img.height;
+  const cellW = W / SHEET_COLS;
+  const cellH = H / SHEET_ROWS;
+  const images = [];
+  let count = 0;
+  for (let row = 0; row < SHEET_ROWS; row++) {
+    for (let col = 0; col < SHEET_COLS; col++) {
+      count++;
+      const left = Math.round(col * cellW) + SHEET_BORDER_TRIM;
+      const top = Math.round(row * cellH) + SHEET_BORDER_TRIM;
+      const right = Math.round((col + 1) * cellW) - SHEET_BORDER_TRIM;
+      const bottom = Math.round((row + 1) * cellH) - SHEET_BORDER_TRIM;
+      const cw = right - left, ch = bottom - top;
+
+      // Ep ve dung 16:9 bang cach cat giua, giong FORCE_ASPECT_169 trong crop_grid.py
+      let sx = left, sy = top, sw = cw, sh = ch;
+      const targetRatio = 16 / 9;
+      const currentRatio = cw / ch;
+      if (currentRatio > targetRatio) {
+        const newW = Math.round(ch * targetRatio);
+        sx = left + Math.floor((cw - newW) / 2);
+        sw = newW;
+      } else if (currentRatio < targetRatio) {
+        const newH = Math.round(cw / targetRatio);
+        sy = top + Math.floor((ch - newH) / 2);
+        sh = newH;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = sw;
+      canvas.height = sh;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      const num = String(count).padStart(2, "0");
+      images.push({ name: `${num}.png`, url: URL.createObjectURL(blob) });
+    }
+  }
+  return images;
+}
+
 function drawSubtitleOnCanvas(ctx, W, H, hanzi, pinyin) {
   if (!hanzi && !pinyin) return;
   // Cong thuc theo chieu cao anh (H) de phu de chiem khoang 1/3 anh
@@ -428,15 +485,20 @@ function renderSubtitlePreview(index) {
 
 $("previewBtn").addEventListener("click", async () => {
   if (!selectedZipFile) {
-    showStatus("err", "Chưa chọn file zip ảnh để xem trước.");
+    showStatus("err", "Chưa chọn ảnh để xem trước.");
     return;
   }
   const btn = $("previewBtn");
   btn.disabled = true;
   btn.textContent = "Đang tải ảnh...";
   try {
-    previewImages = await loadZipImages(selectedZipFile);
-    if (!previewImages.length) throw new Error("Không tìm thấy ảnh (.png/.jpg) nào trong file zip.");
+    const ext = selectedZipFile.name.split(".").pop().toLowerCase();
+    if (ext === "zip") {
+      previewImages = await loadZipImages(selectedZipFile);
+      if (!previewImages.length) throw new Error("Không tìm thấy ảnh (.png/.jpg) nào trong file zip.");
+    } else {
+      previewImages = await cropCombinedSheet(selectedZipFile);
+    }
     previewIndex = 0;
     $("previewPanel").style.display = "block";
     renderSubtitlePreview(previewIndex);
@@ -491,25 +553,36 @@ $("scriptInput").addEventListener("change", (e) => {
 $("combinedInput").addEventListener("change", async (e) => {
   const files = Array.from(e.target.files || []);
   let zipFile = null;
+  let sheetFile = null;
   let textFile = null;
 
   for (const f of files) {
     const ext = f.name.split(".").pop().toLowerCase();
     if (ext === "zip") {
       zipFile = f;
+    } else if (ext === "png" || ext === "jpg" || ext === "jpeg") {
+      sheetFile = f;
     } else if (ext === "txt" || ext === "csv") {
       textFile = f;
     }
   }
 
   const messages = [];
+  const imageFile = zipFile || sheetFile;
 
-  if (zipFile) {
-    selectedZipFile = zipFile;
+  if (imageFile) {
+    selectedZipFile = imageFile;
     previewImages = [];
     $("previewPanel").style.display = "none";
-    const sizeMB = (zipFile.size / (1024 * 1024)).toFixed(2);
-    messages.push(`🖼️ Ảnh: <b>${escapeHtml(zipFile.name)}</b> (${sizeMB} MB)`);
+    const sizeMB = (imageFile.size / (1024 * 1024)).toFixed(2);
+    if (zipFile) {
+      $("imagePath").value = "batch_images.zip";
+      messages.push(`🖼️ Ảnh (file zip 30 tấm): <b>${escapeHtml(zipFile.name)}</b> (${sizeMB} MB)`);
+    } else {
+      const ext = sheetFile.name.split(".").pop().toLowerCase();
+      $("imagePath").value = `combined_sheet.${ext === "jpeg" ? "jpg" : ext}`;
+      messages.push(`🖼️ Ảnh (1 tấm gộp, sẽ tự cắt): <b>${escapeHtml(sheetFile.name)}</b> (${sizeMB} MB)`);
+    }
   }
 
   if (textFile) {
@@ -520,9 +593,9 @@ $("combinedInput").addEventListener("change", async (e) => {
     messages.push(`📄 Câu thoại: <b>${escapeHtml(textFile.name)}</b> (${count} dòng)`);
   }
 
-  const unrecognized = files.filter(f => f !== zipFile && f !== textFile);
+  const unrecognized = files.filter(f => f !== zipFile && f !== sheetFile && f !== textFile);
   if (unrecognized.length) {
-    messages.push(`⚠️ Không nhận diện được: ${unrecognized.map(f => escapeHtml(f.name)).join(", ")} (chỉ hỗ trợ .zip, .txt, .csv)`);
+    messages.push(`⚠️ Không nhận diện được: ${unrecognized.map(f => escapeHtml(f.name)).join(", ")} (chỉ hỗ trợ .zip, .png/.jpg, .txt, .csv)`);
   }
 
   const wrap = $("combinedPreview");
