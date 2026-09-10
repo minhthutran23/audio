@@ -22,6 +22,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
+      - name: Extract images from zip
+        run: |
+          mkdir -p images
+          unzip -o batch_images.zip -d images
+
       - name: Generate audio (Chinese TTS)
         run: python generate_audio.py
 
