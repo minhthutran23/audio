@@ -61,12 +61,17 @@
     font-size: 15px; margin: 0 0 4px; font-weight: 600;
     display: flex; align-items: center; gap: 8px;
   }
-  .card h2 .num {
+  .num {
     display: inline-flex; align-items: center; justify-content: center;
     width: 20px; height: 20px; border-radius: 50%;
     background: var(--gold); color: #fff; font-size: 12px; font-weight: 700;
   }
   .card .hint { font-size: 13px; color: var(--ink-soft); margin: 0 0 14px; line-height: 1.5; }
+
+  summary { cursor: pointer; font-size: 13px; color: var(--ink-soft); padding: 4px 0; }
+  summary:hover { color: var(--ink); }
+  details.card { padding: 22px 24px; }
+  details.card summary { font-size: 15px; font-weight: 600; color: var(--ink); padding: 0; }
 
   label { display: block; font-size: 13px; color: var(--ink-soft); margin: 12px 0 4px; }
   input[type=text], input[type=password], textarea {
@@ -200,50 +205,19 @@
     <div class="seal">话</div>
     <div>
       <h1>Cập nhật câu chuyện tiếng Trung</h1>
-      <p>Chọn ảnh mới + câu thoại mới, bấm 1 nút là đẩy cả 2 lên GitHub</p>
+      <p>Chọn ảnh + câu thoại → 1 nút đẩy lên GitHub, tự chạy, tự tải video</p>
     </div>
   </div>
 
-  <div class="warn-box">
-    <b>Về token GitHub:</b> Token bạn nhập bên dưới chỉ được trình duyệt của bạn dùng để gọi thẳng đến GitHub — không gửi qua bất kỳ máy chủ nào khác, không được lưu lại sau khi bạn đóng trang. Nên tạo <b>Fine-grained personal access token</b> (Settings → Developer settings → Personal access tokens → Fine-grained), giới hạn quyền cho đúng 1 repo, và bật 2 quyền: <b>Contents: Read and write</b> (để cập nhật file) và <b>Actions: Read and write</b> (để tự chạy workflow và tải kết quả). Đặt hạn dùng ngắn.
-  </div>
-
-  <div class="card">
-    <h2><span class="num">1</span>Thông tin repo</h2>
-    <p class="hint">Điền 1 lần, trình duyệt sẽ nhớ cho lần sau (lưu trong máy bạn, không lưu token).</p>
-    <div class="row">
-      <div>
-        <label>Tên tài khoản GitHub (owner)</label>
-        <input type="text" id="owner" placeholder="minhthutran23">
-      </div>
-      <div>
-        <label>Tên repo</label>
-        <input type="text" id="repo" placeholder="audio">
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label>Nhánh (branch)</label>
-        <input type="text" id="branch" placeholder="main" value="main">
-      </div>
-      <div>
-        <label>Tên file workflow</label>
-        <input type="text" id="workflowFile" placeholder="generate-story.yml" value="generate-story.yml">
-      </div>
-    </div>
-    <label>Personal access token</label>
-    <input type="password" id="token" placeholder="github_pat_xxxxxxxx">
-    <label style="display:flex; align-items:center; gap:8px; margin-top:14px; cursor:pointer;">
-      <input type="checkbox" id="autoRun" checked style="width:auto;">
-      <span style="font-size:13px; color:var(--ink-soft);">Tự động chạy workflow và tải video sau khi cập nhật</span>
-    </label>
-  </div>
+  <details class="card" style="padding:14px 24px;">
+    <summary style="font-size:13px; color:var(--ink-soft); cursor:pointer;">🔒 Về token GitHub (bấm để xem)</summary>
+    <p class="hint" style="margin-top:10px;">Token chỉ dùng trong trình duyệt của bạn để gọi GitHub, không gửi đi đâu khác, không được lưu lại. Tạo <b>Fine-grained token</b> (Settings → Developer settings → Personal access tokens), giới hạn cho đúng 1 repo, bật 3 quyền: <b>Contents</b>, <b>Actions</b>, <b>Workflows</b> đều để Read and write.</p>
+  </details>
 
   <div class="card">
-    <h2><span class="num">2</span>Chọn file cần cập nhật</h2>
-    <p class="hint">Chọn 1 lúc cả file zip ảnh và file câu thoại (.txt/.csv) — kéo thả hoặc bấm để chọn nhiều file cùng lúc, tên file trên máy bạn đặt gì cũng được, hệ thống tự nhận diện theo đuôi file. Nếu chỉ muốn cập nhật 1 loại, chọn đúng 1 file thôi cũng được.</p>
+    <h2><span class="num">1</span>Ảnh &amp; câu thoại</h2>
     <label class="filebtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
-      📁 Chọn file (giữ Ctrl/Cmd để chọn nhiều file)
+      📁 Chọn file (zip ảnh + .txt/.csv câu thoại, giữ Ctrl/Cmd để chọn nhiều)
       <input type="file" id="combinedInput" accept=".zip,.txt,.csv" multiple>
     </label>
     <div class="preview" id="combinedPreview" style="display:none"></div>
@@ -257,20 +231,19 @@
       </div>
     </div>
 
-    <div class="row" style="margin-top:16px">
-      <div>
-        <label>Đường dẫn ảnh trong repo</label>
-        <input type="text" id="imagePath" placeholder="batch_images.zip" value="batch_images.zip">
-      </div>
-      <div>
-        <label>Đường dẫn câu thoại trong repo</label>
-        <input type="text" id="path" placeholder="dialogue_data.py" value="dialogue_data.py">
-      </div>
-    </div>
-
     <details style="margin-top:14px">
-      <summary>Hoặc dán / sửa tay nội dung câu thoại ở đây</summary>
-      <textarea id="lines" style="margin-top:8px" placeholder="早上七点，闹钟响了。,Zǎoshang qī diǎn, nàozhōng xiǎng le.
+      <summary>Đường dẫn file trong repo / sửa tay câu thoại</summary>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>Đường dẫn ảnh</label>
+          <input type="text" id="imagePath" placeholder="batch_images.zip" value="batch_images.zip">
+        </div>
+        <div>
+          <label>Đường dẫn câu thoại</label>
+          <input type="text" id="path" placeholder="dialogue_data.py" value="dialogue_data.py">
+        </div>
+      </div>
+      <textarea id="lines" style="margin-top:10px" placeholder="早上七点，闹钟响了。,Zǎoshang qī diǎn, nàozhōng xiǎng le.
 我很累。,Wǒ hěn lèi.
 现在几点?,Xiànzài jǐ diǎn?"></textarea>
       <div class="preview" id="previewWrap" style="display:none">
@@ -281,16 +254,44 @@
   </div>
 
   <div class="card">
-    <h2><span class="num">3</span>Cập nhật script (tuỳ chọn)</h2>
-    <p class="hint">Dùng khi bạn sửa <code>generate_audio.py</code>, <code>make_video.py</code>, <code>dialogue_data.py</code>, file workflow, hoặc bất kỳ file nào khác — chọn file trên máy, nó sẽ lưu vào repo đúng tên file đó (đè lên bản cũ). Chọn nhiều file cùng lúc được (giữ Ctrl/Cmd).</p>
+    <h2><span class="num">2</span>Kết nối GitHub</h2>
+    <div class="row">
+      <div>
+        <label>Owner</label>
+        <input type="text" id="owner" placeholder="minhthutran23">
+      </div>
+      <div>
+        <label>Repo</label>
+        <input type="text" id="repo" placeholder="audio">
+      </div>
+      <div>
+        <label>Branch</label>
+        <input type="text" id="branch" placeholder="main" value="main">
+      </div>
+    </div>
+    <label>Personal access token</label>
+    <input type="password" id="token" placeholder="github_pat_xxxxxxxx">
+    <label style="display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer;">
+      <input type="checkbox" id="autoRun" checked style="width:auto;">
+      <span style="font-size:13px; color:var(--ink-soft);">Tự động chạy workflow và tải video sau khi cập nhật</span>
+    </label>
+    <details style="margin-top:10px">
+      <summary>Tên file workflow (ít khi cần đổi)</summary>
+      <input type="text" id="workflowFile" style="margin-top:8px" placeholder="generate-story.yml" value="generate-story.yml">
+    </details>
+  </div>
+
+  <details class="card">
+    <summary style="font-size:15px; font-weight:600; cursor:pointer;"><span class="num" style="display:inline-flex; margin-right:8px;">3</span>Cập nhật script (nâng cao)</summary>
+    <p class="hint" style="margin-top:10px">Dùng khi sửa <code>generate_audio.py</code>, <code>make_video.py</code>, file workflow... File <code>.yml</code>/<code>.yaml</code> tự lưu vào <code>.github/workflows/</code>.</p>
     <label class="filebtn" style="display:flex; justify-content:center; padding:18px; font-size:14px;">
       🧩 Chọn file script cần cập nhật
       <input type="file" id="scriptInput" multiple>
     </label>
     <div class="preview" id="scriptPreview" style="display:none"></div>
-    <label style="margin-top:10px">Thư mục đích trong repo cho các file khác (để trống = gốc repo). Riêng file <code>.yml</code>/<code>.yaml</code> sẽ tự động lưu vào <code>.github/workflows/</code>, không cần điền gì.</label>
+    <label style="margin-top:10px">Thư mục đích cho file khác (để trống = gốc repo)</label>
     <input type="text" id="scriptTargetDir" placeholder="(để trống = gốc repo)">
-  </div>
+  </details>
 
   <button class="primary" id="pushAllBtn">Cập nhật + chạy + tải video</button>
   <button class="secondary" id="downloadBtn">Chỉ tải file dialogue_data.py về máy (không đẩy lên GitHub)</button>
@@ -372,14 +373,15 @@ async function loadZipImages(file) {
 
 function drawSubtitleOnCanvas(ctx, W, H, hanzi, pinyin) {
   if (!hanzi && !pinyin) return;
-  const hanziSize = Math.max(6, Math.floor(W / 45));
-  const pinyinSize = Math.max(4, Math.floor(W / 70));
+  // Cong thuc theo chieu cao anh (H) de phu de chiem khoang 1/3 anh
+  const hanziSize = Math.max(10, Math.floor(H / 10));
+  const pinyinSize = Math.max(7, Math.floor(H / 15));
   const fontStack = `"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif`;
 
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
 
-  const padding = 5;
+  const padding = Math.max(4, Math.floor(H / 20));
   const boxH = hanziSize + pinyinSize + padding * 3;
   const boxTop = H - boxH - 10;
 
