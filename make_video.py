@@ -16,7 +16,7 @@ Kết quả: file "story_video.mp4" — mỗi ảnh hiển thị đúng bằng �
 tương ứng, có thêm 0.5 giây khoảng lặng giữa các cảnh cho dễ nghe.
 """
 
-from moviepy.editor import ImageClip, AudioFileClip, concatenate_videoclips, CompositeAudioClip
+from moviepy import ImageClip, AudioFileClip, concatenate_videoclips, CompositeAudioClip
 import os
 
 IMAGE_DIR = "images"
@@ -44,8 +44,8 @@ for i, img_name in enumerate(image_files, start=1):
     audio_clip = AudioFileClip(audio_path)
     duration = audio_clip.duration + PAUSE_BETWEEN_SCENES
 
-    img_clip = ImageClip(img_path).set_duration(duration)
-    img_clip = img_clip.set_audio(audio_clip.set_start(0))
+    img_clip = ImageClip(img_path).with_duration(duration)
+    img_clip = img_clip.with_audio(audio_clip.with_start(0))
 
     clips.append(img_clip)
     print(f"[{num}] {duration:.1f}s")
