@@ -18,9 +18,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install gTTS moviepy
+          pip install gTTS moviepy pillow
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg fonts-noto-cjk
 
       - name: Extract images from zip
         run: |
