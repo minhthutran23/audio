@@ -22,13 +22,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg fonts-noto-cjk
 
-      - name: Extract images from zip
+      - name: Prepare images (crop combined sheet or unzip)
         run: |
           mkdir -p images
-          rm -rf images_tmp
-          unzip -o batch_images.zip -d images_tmp
-          find images_tmp -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) -exec mv {} images/ \;
-          rm -rf images_tmp
+          if [ -f combined_sheet.png ] || [ -f combined_sheet.jpg ] || [ -f combined_sheet.jpeg ]; then
+            echo "Phat hien anh gop -> dang cat thanh tung o..."
+            python crop_grid.py
+          elif [ -f batch_images.zip ]; then
+            echo "Phat hien file zip -> dang giai nen..."
+            rm -rf images_tmp
+            unzip -o batch_images.zip -d images_tmp
+            find images_tmp -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) -exec mv {} images/ \;
+            rm -rf images_tmp
+          else
+            echo "Khong tim thay combined_sheet.png/jpg hoac batch_images.zip trong repo."
+            exit 1
+          fi
 
       - name: Generate audio (Chinese TTS)
         run: python generate_audio.py
