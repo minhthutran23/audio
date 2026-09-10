@@ -81,9 +81,10 @@ def add_subtitle(image_path, hanzi, pinyin, out_path):
     W, H = img.size
     draw = ImageDraw.Draw(img, "RGBA")
 
-    hanzi_size = max(6, W // 45)
-    pinyin_size = max(4, W // 70)
-    padding = 5
+    # Cong thuc theo chieu cao anh (H) de phu de chiem khoang 1/3 anh
+    hanzi_size = max(10, H // 10)
+    pinyin_size = max(7, H // 15)
+    padding = max(4, H // 20)
 
     if FONT_PATH:
         font_hanzi = ImageFont.truetype(FONT_PATH, hanzi_size)
