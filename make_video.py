@@ -17,7 +17,7 @@ import os
 import re
 import shutil
 import subprocess
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 from moviepy import (
     ImageClip,
     AudioFileClip,
@@ -27,6 +27,28 @@ from moviepy import (
 )
 
 from dialogue_data import SCENES
+
+# ---- AI super-resolution (Real-ESRGAN), neu khong cai duoc thi tu dong dung
+# cach cu (phong to LANCZOS + lam net) khong lam hong ca video ----
+AI_UPSAMPLER = None
+try:
+    import numpy as np
+    from realesrgan import RealESRGANer
+    from basicsr.archs.rrdbnet_arch import RRDBNet
+
+    MODEL_PATH = "weights/RealESRGAN_x4plus_anime_6B.pth"
+    if os.path.exists(MODEL_PATH):
+        _model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64,
+                          num_block=6, num_grow_ch=32, scale=4)
+        AI_UPSAMPLER = RealESRGANer(
+            scale=4, model_path=MODEL_PATH, model=_model,
+            tile=0, tile_pad=10, pre_pad=0, half=False
+        )
+        print("Da bat AI upscaler (Real-ESRGAN).")
+    else:
+        print(f"Khong thay model tai {MODEL_PATH}, dung cach phong to thuong.")
+except Exception as e:
+    print(f"Khong dung duoc Real-ESRGAN ({e}), dung cach phong to thuong.")
 
 IMAGE_DIR = "images"
 AUDIO_DIR = "audio"
@@ -68,23 +90,42 @@ if FONT_PATH is None:
     print("  Them buoc 'sudo apt-get install -y fonts-noto-cjk' vao workflow.")
 
 
+def upscale_image(img):
+    """Phong to anh len TARGET_WIDTH. Dung AI (Real-ESRGAN) neu co,
+    khong thi dung LANCZOS + lam net (unsharp mask) nhu cu."""
+    if img.width >= TARGET_WIDTH:
+        return img
+
+    if AI_UPSAMPLER is not None:
+        try:
+            img_np = np.array(img)          # RGB
+            img_bgr = img_np[:, :, ::-1]     # Real-ESRGAN can BGR (kieu cv2)
+            output, _ = AI_UPSAMPLER.enhance(img_bgr, outscale=4)
+            img = Image.fromarray(output[:, :, ::-1])
+            if img.width != TARGET_WIDTH:
+                ratio = TARGET_WIDTH / img.width
+                img = img.resize((TARGET_WIDTH, round(img.height * ratio)), Image.LANCZOS)
+            return img
+        except Exception as e:
+            print(f"  AI upscale loi ({e}), chuyen sang cach thuong cho anh nay.")
+
+    ratio = TARGET_WIDTH / img.width
+    img = img.resize((TARGET_WIDTH, round(img.height * ratio)), Image.LANCZOS)
+    img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+    return img
+
+
 def add_subtitle(image_path, hanzi, pinyin, out_path):
     img = Image.open(image_path).convert("RGB")
-
-    # Anh nguon qua nho se bi mo khi xuat video -> phong to len truoc
-    # bang LANCZOS (noi suy chat luong cao) neu nho hon TARGET_WIDTH.
-    if img.width < TARGET_WIDTH:
-        ratio = TARGET_WIDTH / img.width
-        new_size = (TARGET_WIDTH, round(img.height * ratio))
-        img = img.resize(new_size, Image.LANCZOS)
+    img = upscale_image(img)
 
     W, H = img.size
     draw = ImageDraw.Draw(img, "RGBA")
 
-    # Cong thuc theo chieu cao anh (H) de phu de chiem khoang 1/3 anh
-    hanzi_size = max(10, H // 10)
-    pinyin_size = max(7, H // 15)
-    padding = max(4, H // 20)
+    # Cong thuc theo chieu cao anh (H): khung nen om sat chu, chiem ~1/4 anh
+    hanzi_size = max(9, H // 13)
+    pinyin_size = max(6, H // 20)
+    padding = max(3, H // 25)
 
     if FONT_PATH:
         font_hanzi = ImageFont.truetype(FONT_PATH, hanzi_size)
@@ -100,13 +141,22 @@ def add_subtitle(image_path, hanzi, pinyin, out_path):
     hw, hh = text_size(hanzi, font_hanzi)
     pw, ph = text_size(pinyin, font_pinyin)
 
-    box_h = hh + ph + padding * 3
-    box_top = H - box_h - 10
+    line_gap = max(2, padding // 2)
+    box_w = max(hw, pw) + padding * 4
+    box_h = hh + ph + line_gap + padding * 2
+    box_left = (W - box_w) / 2
+    box_top = H - box_h - 14
 
-    # nen mo phia sau chu de de doc
-    draw.rectangle([0, box_top, W, H - 10], fill=(0, 0, 0, 150))
-    draw.text(((W - hw) / 2, box_top + padding), hanzi, font=font_hanzi, fill=(255, 255, 255, 255))
-    draw.text(((W - pw) / 2, box_top + padding * 2 + hh), pinyin, font=font_pinyin, fill=(255, 221, 130, 255))
+    radius = 16
+    draw.rounded_rectangle(
+        [box_left, box_top, box_left + box_w, box_top + box_h],
+        radius=radius, fill=(0, 0, 0, 150)
+    )
+
+    block_h = hh + line_gap + ph
+    start_y = box_top + (box_h - block_h) / 2
+    draw.text((W / 2, start_y + hh / 2), hanzi, font=font_hanzi, fill=(255, 255, 255, 255), anchor="mm")
+    draw.text((W / 2, start_y + hh + line_gap + ph / 2), pinyin, font=font_pinyin, fill=(255, 221, 130, 255), anchor="mm")
 
     img.save(out_path)
 
