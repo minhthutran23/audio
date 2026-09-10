@@ -34,6 +34,7 @@ OUTPUT_FILE = "story_video.mp4"
 
 # ---- CAC THAM SO BAN CO THE CHINH ----
 PAUSE_BETWEEN_SCENES = 1.0     # giay nghi giua cac canh (tang/giam so nay tuy y)
+TARGET_WIDTH = 720             # anh nho hon se duoc phong to len do net hon; anh to hon giu nguyen
 BG_MUSIC_FILE = "background_music.mp3"  # dat file nhac nen (mp3) o thu muc goc, khong co thi tu bo qua
 BG_MUSIC_VOLUME = 0.15         # am luong nhac nen (0.0 - 1.0), de nho hon loi thoai
 # ----------------------------------------
@@ -69,11 +70,20 @@ if FONT_PATH is None:
 
 def add_subtitle(image_path, hanzi, pinyin, out_path):
     img = Image.open(image_path).convert("RGB")
+
+    # Anh nguon qua nho se bi mo khi xuat video -> phong to len truoc
+    # bang LANCZOS (noi suy chat luong cao) neu nho hon TARGET_WIDTH.
+    if img.width < TARGET_WIDTH:
+        ratio = TARGET_WIDTH / img.width
+        new_size = (TARGET_WIDTH, round(img.height * ratio))
+        img = img.resize(new_size, Image.LANCZOS)
+
     W, H = img.size
     draw = ImageDraw.Draw(img, "RGBA")
 
-    hanzi_size = max(20, W // 20)
-    pinyin_size = max(13, W // 32)
+    hanzi_size = max(6, W // 45)
+    pinyin_size = max(4, W // 70)
+    padding = 5
 
     if FONT_PATH:
         font_hanzi = ImageFont.truetype(FONT_PATH, hanzi_size)
@@ -89,7 +99,6 @@ def add_subtitle(image_path, hanzi, pinyin, out_path):
     hw, hh = text_size(hanzi, font_hanzi)
     pw, ph = text_size(pinyin, font_pinyin)
 
-    padding = 14
     box_h = hh + ph + padding * 3
     box_top = H - box_h - 10
 
