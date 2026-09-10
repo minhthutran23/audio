@@ -29,7 +29,15 @@
     display: flex;
     justify-content: center;
   }
-  .wrap { width: 100%; max-width: 720px; }
+  .wrap { width: 100%; max-width: 980px; }
+
+  .two-col { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 20px; }
+  .two-col .col-left { flex: 1; min-width: 0; }
+  .two-col .col-right { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+  .two-col .card, .two-col details.card { margin-bottom: 0; }
+  @media (max-width: 760px) {
+    .two-col { flex-direction: column; }
+  }
   .mast {
     display: flex;
     align-items: baseline;
@@ -209,11 +217,8 @@
     </div>
   </div>
 
-  <details class="card" style="padding:14px 24px;">
-    <summary style="font-size:13px; color:var(--ink-soft); cursor:pointer;">🔒 Về token GitHub (bấm để xem)</summary>
-    <p class="hint" style="margin-top:10px;">Token chỉ dùng trong trình duyệt của bạn để gọi GitHub, không gửi đi đâu khác, không được lưu lại. Tạo <b>Fine-grained token</b> (Settings → Developer settings → Personal access tokens), giới hạn cho đúng 1 repo, bật 3 quyền: <b>Contents</b>, <b>Actions</b>, <b>Workflows</b> đều để Read and write.</p>
-  </details>
-
+<div class="two-col">
+  <div class="col-left">
   <div class="card">
     <h2><span class="num">1</span>Ảnh &amp; câu thoại</h2>
     <label class="filebtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
@@ -252,23 +257,15 @@
       </div>
     </details>
   </div>
+  </div>
 
+  <div class="col-right">
+  <details class="card" style="padding:14px 24px;">
+    <summary style="font-size:13px; color:var(--ink-soft); cursor:pointer;">🔒 Về token GitHub (bấm để xem)</summary>
+    <p class="hint" style="margin-top:10px;">Token chỉ dùng trong trình duyệt của bạn để gọi GitHub, không gửi đi đâu khác, không được lưu lại. Tạo <b>Fine-grained token</b> (Settings → Developer settings → Personal access tokens), giới hạn cho đúng 1 repo, bật 3 quyền: <b>Contents</b>, <b>Actions</b>, <b>Workflows</b> đều để Read and write.</p>
+  </details>
   <div class="card">
     <h2><span class="num">2</span>Kết nối GitHub</h2>
-    <div class="row">
-      <div>
-        <label>Owner</label>
-        <input type="text" id="owner" placeholder="minhthutran23">
-      </div>
-      <div>
-        <label>Repo</label>
-        <input type="text" id="repo" placeholder="audio">
-      </div>
-      <div>
-        <label>Branch</label>
-        <input type="text" id="branch" placeholder="main" value="main">
-      </div>
-    </div>
     <label>Personal access token</label>
     <input type="password" id="token" placeholder="github_pat_xxxxxxxx">
     <label style="display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer;">
@@ -276,8 +273,27 @@
       <span style="font-size:13px; color:var(--ink-soft);">Tự động chạy workflow và tải video sau khi cập nhật</span>
     </label>
     <details style="margin-top:10px">
-      <summary>Tên file workflow (ít khi cần đổi)</summary>
-      <input type="text" id="workflowFile" style="margin-top:8px" placeholder="generate-story.yml" value="generate-story.yml">
+      <summary>Cài đặt nâng cao (owner/repo/branch/workflow)</summary>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>Owner</label>
+          <input type="text" id="owner" placeholder="minhthutran23" value="minhthutran23">
+        </div>
+        <div>
+          <label>Repo</label>
+          <input type="text" id="repo" placeholder="audio" value="audio">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>Branch</label>
+          <input type="text" id="branch" placeholder="main" value="main">
+        </div>
+        <div>
+          <label>File workflow</label>
+          <input type="text" id="workflowFile" placeholder="generate-story.yml" value="generate-story.yml">
+        </div>
+      </div>
     </details>
   </div>
 
@@ -292,9 +308,10 @@
     <label style="margin-top:10px">Thư mục đích cho file khác (để trống = gốc repo)</label>
     <input type="text" id="scriptTargetDir" placeholder="(để trống = gốc repo)">
   </details>
+  </div>
+</div>
 
   <button class="primary" id="pushAllBtn">Cập nhật + chạy + tải video</button>
-  <button class="secondary" id="downloadBtn">Chỉ tải file dialogue_data.py về máy (không đẩy lên GitHub)</button>
 
   <div class="steps" id="steps">
     <div class="step" id="step-img"><span class="dot"></span><span class="label">Cập nhật ảnh</span></div>
@@ -428,30 +445,53 @@ async function cropCombinedSheet(file) {
   return images;
 }
 
+function drawRoundedRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 function drawSubtitleOnCanvas(ctx, W, H, hanzi, pinyin) {
   if (!hanzi && !pinyin) return;
-  // Cong thuc theo chieu cao anh (H) de phu de chiem khoang 1/3 anh
-  const hanziSize = Math.max(10, Math.floor(H / 10));
-  const pinyinSize = Math.max(7, Math.floor(H / 15));
+  // Cong thuc theo chieu cao anh (H): khung nen om sat chu, chiem ~1/4 anh
+  const hanziSize = Math.max(9, Math.floor(H / 13));
+  const pinyinSize = Math.max(6, Math.floor(H / 20));
   const fontStack = `"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif`;
 
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
+  const padding = Math.max(3, Math.floor(H / 25));
+  const lineGap = Math.max(2, Math.floor(padding / 2));
 
-  const padding = Math.max(4, Math.floor(H / 20));
-  const boxH = hanziSize + pinyinSize + padding * 3;
-  const boxTop = H - boxH - 10;
+  ctx.font = `${hanziSize}px ${fontStack}`;
+  const hw = ctx.measureText(hanzi).width;
+  ctx.font = `${pinyinSize}px ${fontStack}`;
+  const pw = ctx.measureText(pinyin).width;
+
+  const boxW = Math.max(hw, pw) + padding * 4;
+  const boxH = hanziSize + pinyinSize + lineGap + padding * 2;
+  const boxLeft = (W - boxW) / 2;
+  const boxTop = H - boxH - 14;
 
   ctx.fillStyle = "rgba(0,0,0,0.59)";
-  ctx.fillRect(0, boxTop, W, H - 10 - boxTop);
+  drawRoundedRect(ctx, boxLeft, boxTop, boxW, boxH, 16);
+  ctx.fill();
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const blockH = hanziSize + lineGap + pinyinSize;
+  const startY = boxTop + (boxH - blockH) / 2;
 
   ctx.fillStyle = "#ffffff";
   ctx.font = `${hanziSize}px ${fontStack}`;
-  ctx.fillText(hanzi, W / 2, boxTop + padding);
+  ctx.fillText(hanzi, W / 2, startY + hanziSize / 2);
 
   ctx.fillStyle = "rgb(255,221,130)";
   ctx.font = `${pinyinSize}px ${fontStack}`;
-  ctx.fillText(pinyin, W / 2, boxTop + padding * 2 + hanziSize);
+  ctx.fillText(pinyin, W / 2, startY + hanziSize + lineGap + pinyinSize / 2);
 }
 
 const TARGET_WIDTH = 720; // phai khop voi TARGET_WIDTH trong make_video.py
@@ -483,14 +523,16 @@ function renderSubtitlePreview(index) {
   $("sceneIndicator").textContent = `Cảnh ${index + 1}/${previewImages.length} — ${item.name}`;
 }
 
-$("previewBtn").addEventListener("click", async () => {
+async function generatePreview(silent) {
   if (!selectedZipFile) {
-    showStatus("err", "Chưa chọn ảnh để xem trước.");
+    if (!silent) showStatus("err", "Chưa chọn ảnh để xem trước.");
     return;
   }
   const btn = $("previewBtn");
-  btn.disabled = true;
-  btn.textContent = "Đang tải ảnh...";
+  if (!silent) {
+    btn.disabled = true;
+    btn.textContent = "Đang tải ảnh...";
+  }
   try {
     const ext = selectedZipFile.name.split(".").pop().toLowerCase();
     if (ext === "zip") {
@@ -503,12 +545,16 @@ $("previewBtn").addEventListener("click", async () => {
     $("previewPanel").style.display = "block";
     renderSubtitlePreview(previewIndex);
   } catch (err) {
-    showStatus("err", "Xem trước thất bại: " + err.message);
+    if (!silent) showStatus("err", "Xem trước thất bại: " + err.message);
   } finally {
-    btn.disabled = false;
-    btn.textContent = "👁️ Xem trước phụ đề";
+    if (!silent) {
+      btn.disabled = false;
+      btn.textContent = "👁️ Xem trước phụ đề";
+    }
   }
-});
+}
+
+$("previewBtn").addEventListener("click", () => generatePreview(false));
 
 $("prevSceneBtn").addEventListener("click", () => {
   if (!previewImages.length) return;
@@ -604,6 +650,10 @@ $("combinedInput").addEventListener("change", async (e) => {
     wrap.innerHTML = messages.join("<br>");
   } else {
     wrap.style.display = "none";
+  }
+
+  if (imageFile) {
+    generatePreview(true);
   }
 });
 
@@ -719,6 +769,15 @@ async function pollRunUntilDone(owner, repo, runId, token, onProgress) {
   throw new Error("Chờ quá lâu (hơn 10 phút) mà workflow chưa chạy xong.");
 }
 
+function triggerDownload(url, filename) {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 async function fetchArtifacts(owner, repo, runId, token) {
   const data = await githubRequest(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}/artifacts`, token);
   const results = [];
@@ -730,6 +789,8 @@ async function fetchArtifacts(owner, repo, runId, token) {
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     results.push({ name: art.name, url });
+    triggerDownload(url, `${art.name}.zip`);
+    await sleep(400); // cach nhau chut it de trinh duyet khong chan tai nhieu file cung luc
   }
   return results;
 }
@@ -873,19 +934,6 @@ async function pushImages(owner, repo, branch, token) {
   throw lastErr;
 }
 
-$("downloadBtn").addEventListener("click", () => {
-  const scenes = parseLines($("lines").value);
-  if (!scenes.length) { showStatus("err", "Chưa có dòng câu thoại nào để tạo file."); return; }
-  const content = buildPythonFile(scenes);
-  const blob = new Blob([content], { type: "text/x-python" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = $("path").value || "dialogue_data.py";
-  a.click();
-  URL.revokeObjectURL(url);
-});
-
 $("pushAllBtn").addEventListener("click", async () => {
   const owner = $("owner").value.trim();
   const repo = $("repo").value.trim();
@@ -1023,7 +1071,7 @@ $("pushAllBtn").addEventListener("click", async () => {
     setStep("step-dl", "ok");
 
     if (artifacts.length) {
-      html += "Hoàn tất! Tải kết quả: ";
+      html += "Hoàn tất! Đã tự tải về máy — nếu trình duyệt chặn, bấm link tải thủ công: ";
       html += artifacts.map(a => `<a href="${a.url}" download="${a.name}.zip">${a.name}</a>`).join(" · ");
       html += `<br><a href="${finalRun.html_url}" target="_blank">Xem chi tiết trên GitHub</a>`;
     } else {
