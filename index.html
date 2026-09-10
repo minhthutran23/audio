@@ -226,6 +226,7 @@
       <input type="file" id="combinedInput" accept=".zip,.txt,.csv,.png,.jpg,.jpeg" multiple>
     </label>
     <div class="preview" id="combinedPreview" style="display:none"></div>
+    <button class="secondary" id="clearFilesBtn" style="display:none; margin-top:6px; padding:7px; font-size:12.5px;">✕ Xoá file đã chọn, chọn lại</button>
     <button class="secondary" id="previewBtn" style="margin-top:10px">👁️ Xem trước phụ đề</button>
     <div id="previewPanel" style="display:none; margin-top:14px; text-align:center;">
       <canvas id="previewCanvas" style="max-width:100%; border:1px solid var(--line); border-radius:8px;"></canvas>
@@ -305,6 +306,7 @@
       <input type="file" id="scriptInput" multiple>
     </label>
     <div class="preview" id="scriptPreview" style="display:none"></div>
+    <button class="secondary" id="clearScriptBtn" style="display:none; margin-top:6px; padding:7px; font-size:12.5px;">✕ Xoá file đã chọn, chọn lại</button>
     <label style="margin-top:10px">Thư mục đích cho file khác (để trống = gốc repo)</label>
     <input type="text" id="scriptTargetDir" placeholder="(để trống = gốc repo)">
   </details>
@@ -653,6 +655,7 @@ $("scriptInput").addEventListener("change", (e) => {
   const wrap = $("scriptPreview");
   if (selectedScriptFiles.length) {
     wrap.style.display = "block";
+    $("clearScriptBtn").style.display = "block";
     wrap.innerHTML = selectedScriptFiles.map(f => {
       const isWorkflow = /\.(yml|yaml)$/i.test(f.name);
       const dest = isWorkflow ? `.github/workflows/${f.name}` : f.name;
@@ -660,7 +663,15 @@ $("scriptInput").addEventListener("change", (e) => {
     }).join("<br>");
   } else {
     wrap.style.display = "none";
+    $("clearScriptBtn").style.display = "none";
   }
+});
+
+$("clearScriptBtn").addEventListener("click", () => {
+  selectedScriptFiles = [];
+  $("scriptInput").value = "";
+  $("scriptPreview").style.display = "none";
+  $("clearScriptBtn").style.display = "none";
 });
 
 $("combinedInput").addEventListener("change", async (e) => {
@@ -714,14 +725,26 @@ $("combinedInput").addEventListener("change", async (e) => {
   const wrap = $("combinedPreview");
   if (messages.length) {
     wrap.style.display = "block";
+    $("clearFilesBtn").style.display = "block";
     wrap.innerHTML = messages.join("<br>");
   } else {
     wrap.style.display = "none";
+    $("clearFilesBtn").style.display = "none";
   }
 
   if (imageFile) {
     generatePreview(true);
   }
+});
+
+$("clearFilesBtn").addEventListener("click", () => {
+  selectedZipFile = null;
+  previewImages = [];
+  $("combinedInput").value = "";
+  $("combinedPreview").style.display = "none";
+  $("clearFilesBtn").style.display = "none";
+  $("previewPanel").style.display = "none";
+  $("imagePath").value = "batch_images.zip";
 });
 
 function buildPythonFile(scenes) {
