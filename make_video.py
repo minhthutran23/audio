@@ -24,18 +24,21 @@ AUDIO_DIR = "audio"
 OUTPUT_FILE = "story_video.mp4"
 PAUSE_BETWEEN_SCENES = 0.5  # giây
 
+# Lấy danh sách ảnh theo thứ tự tên file (01_xxx.png, 02_xxx.png, ... đã tự đúng thứ tự)
+image_files = sorted([
+    f for f in os.listdir(IMAGE_DIR)
+    if f.lower().endswith((".png", ".jpg", ".jpeg"))
+])
+
 clips = []
 
-for i in range(1, 31):
+for i, img_name in enumerate(image_files, start=1):
     num = f"{i:02d}"
-    img_path = os.path.join(IMAGE_DIR, f"{num}.png")
+    img_path = os.path.join(IMAGE_DIR, img_name)
     audio_path = os.path.join(AUDIO_DIR, f"{num}.mp3")
 
-    if not os.path.exists(img_path):
-        print(f"⚠️  Không tìm thấy ảnh: {img_path} — bỏ qua cảnh {num}")
-        continue
     if not os.path.exists(audio_path):
-        print(f"⚠️  Không tìm thấy audio: {audio_path} — bỏ qua cảnh {num}")
+        print(f"⚠️  Không tìm thấy audio: {audio_path} — bỏ qua cảnh {num} ({img_name})")
         continue
 
     audio_clip = AudioFileClip(audio_path)
