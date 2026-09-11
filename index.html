@@ -657,8 +657,9 @@ $("scriptInput").addEventListener("change", (e) => {
     wrap.style.display = "block";
     $("clearScriptBtn").style.display = "block";
     wrap.innerHTML = selectedScriptFiles.map(f => {
-      const isWorkflow = /\.(yml|yaml)$/i.test(f.name);
-      const dest = isWorkflow ? `.github/workflows/${f.name}` : f.name;
+      const cleanName = f.name.replace(/ \(\d+\)(?=\.[^.]+$)/, "");
+      const isWorkflow = /\.(yml|yaml)$/i.test(cleanName);
+      const dest = isWorkflow ? `.github/workflows/${cleanName}` : cleanName;
       return `🧩 <b>${escapeHtml(f.name)}</b> → sẽ lưu vào <code>${escapeHtml(dest)}</code>`;
     }).join("<br>");
   } else {
@@ -918,8 +919,11 @@ async function pushAllScriptFiles(owner, repo, branch, token) {
   for (const file of selectedScriptFiles) {
     try {
       const content = await readTextFile(file);
-      const isWorkflowFile = /\.(yml|yaml)$/i.test(file.name);
-      const path = isWorkflowFile ? `.github/workflows/${file.name}` : (prefix + file.name);
+      // Trinh duyet hay tu them " (1)", " (2)"... vao ten file trung lap khi tai xuong.
+      // Bo phan nay di de khop dung ten file goc ma code tren repo dang mong doi.
+      const cleanName = file.name.replace(/ \(\d+\)(?=\.[^.]+$)/, "");
+      const isWorkflowFile = /\.(yml|yaml)$/i.test(cleanName);
+      const path = isWorkflowFile ? `.github/workflows/${cleanName}` : (prefix + cleanName);
       const r = await pushGenericFile(owner, repo, branch, token, path, content);
       results.push(r);
     } catch (err) {
