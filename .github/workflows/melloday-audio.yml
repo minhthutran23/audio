@@ -18,15 +18,30 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install edge-tts pydub
+          pip install edge-tts pydub moviepy
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
       - name: Generate episode audio
         run: python generate_episode_audio.py melloday-kids-ep01-script.md
 
+      - name: Merge audio into video (if video file present)
+        run: |
+          if [ -f story_final.mp4 ]; then
+            python merge_audio_video.py
+          else
+            echo "Khong co story_final.mp4 trong repo, bo qua buoc ghep video."
+          fi
+
       - name: Upload episode audio
         uses: actions/upload-artifact@v4
         with:
           name: episode_audio
           path: episode_audio/
+
+      - name: Upload final video with audio
+        if: hashFiles('melloday_ep01_final.mp4') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: melloday_final_video
+          path: melloday_ep01_final.mp4
