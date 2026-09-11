@@ -729,6 +729,7 @@ $("nextSceneBtn").addEventListener("click", () => {
 let selectedZipFile = null;
 let selectedMdContent = null;
 let selectedMdName = null;
+let selectedMdOriginalName = null;
 
 function readTextFile(file) {
   return new Promise((resolve, reject) => {
@@ -789,44 +790,67 @@ $("combinedInput").addEventListener("change", async (e) => {
     }
   }
 
-  const messages = [];
   const imageFile = zipFile || sheetFile || videoFile;
 
   if (imageFile) {
     selectedZipFile = imageFile;
     previewImages = [];
     $("previewPanel").style.display = "none";
-    const sizeMB = (imageFile.size / (1024 * 1024)).toFixed(2);
     if (zipFile) {
       $("imagePath").value = "batch_images.zip";
-      messages.push(`🖼️ Ảnh (file zip 30 tấm): <b>${escapeHtml(zipFile.name)}</b> (${sizeMB} MB)`);
     } else if (videoFile) {
       $("imagePath").value = "story_final.mp4";
-      messages.push(`🎬 Video: <b>${escapeHtml(videoFile.name)}</b> (${sizeMB} MB)`);
     } else {
       const ext = sheetFile.name.split(".").pop().toLowerCase();
       $("imagePath").value = `combined_sheet.${ext === "jpeg" ? "jpg" : ext}`;
-      messages.push(`🖼️ Ảnh (1 tấm gộp, sẽ tự cắt): <b>${escapeHtml(sheetFile.name)}</b> (${sizeMB} MB)`);
     }
   }
 
   if (mdFile) {
     selectedMdContent = await readTextFile(mdFile);
     selectedMdName = "melloday_script.md";
-    messages.push(`📄 Script: <b>${escapeHtml(mdFile.name)}</b> → sẽ lưu vào <code>${selectedMdName}</code>`);
+    selectedMdOriginalName = mdFile.name;
   }
 
   if (textFile) {
     const text = await readTextFile(textFile);
     $("lines").value = text;
     renderPreview();
-    const count = parseLines(text).length;
-    messages.push(`📄 Câu thoại: <b>${escapeHtml(textFile.name)}</b> (${count} dòng)`);
   }
 
   const unrecognized = files.filter(f => f !== zipFile && f !== sheetFile && f !== videoFile && f !== mdFile && f !== textFile);
   if (unrecognized.length) {
-    messages.push(`⚠️ Không nhận diện được: ${unrecognized.map(f => escapeHtml(f.name)).join(", ")} (chỉ hỗ trợ .zip, .png/.jpg, .mp4, .md, .txt, .csv)`);
+    showStatus("err", `Không nhận diện được: ${unrecognized.map(f => escapeHtml(f.name)).join(", ")} (chỉ hỗ trợ .zip, .png/.jpg, .mp4, .md, .txt, .csv)`);
+  }
+
+  updateCombinedPreview();
+
+  if (imageFile) {
+    generatePreview(true);
+  }
+});
+
+function updateCombinedPreview() {
+  const messages = [];
+
+  if (selectedZipFile) {
+    const ext = selectedZipFile.name.split(".").pop().toLowerCase();
+    const sizeMB = (selectedZipFile.size / (1024 * 1024)).toFixed(2);
+    if (ext === "zip") {
+      messages.push(`🖼️ Ảnh (file zip 30 tấm): <b>${escapeHtml(selectedZipFile.name)}</b> (${sizeMB} MB)`);
+    } else if (ext === "mp4") {
+      messages.push(`🎬 Video: <b>${escapeHtml(selectedZipFile.name)}</b> (${sizeMB} MB)`);
+    } else {
+      messages.push(`🖼️ Ảnh (1 tấm gộp, sẽ tự cắt): <b>${escapeHtml(selectedZipFile.name)}</b> (${sizeMB} MB)`);
+    }
+  }
+
+  if (selectedMdContent) {
+    messages.push(`📄 Script: <b>${escapeHtml(selectedMdOriginalName || selectedMdName)}</b> → sẽ lưu vào <code>${selectedMdName}</code>`);
+  }
+
+  if (parseLines($("lines").value).length) {
+    messages.push(`📄 Câu thoại: <b>${parseLines($("lines").value).length}</b> dòng`);
   }
 
   const wrap = $("combinedPreview");
@@ -838,17 +862,14 @@ $("combinedInput").addEventListener("change", async (e) => {
     wrap.style.display = "none";
     $("clearFilesBtn").style.display = "none";
   }
-
-  if (imageFile) {
-    generatePreview(true);
-  }
-});
+}
 
 $("clearFilesBtn").addEventListener("click", () => {
   selectedZipFile = null;
   previewImages = [];
   selectedMdContent = null;
   selectedMdName = null;
+  selectedMdOriginalName = null;
   $("combinedInput").value = "";
   $("combinedPreview").style.display = "none";
   $("clearFilesBtn").style.display = "none";
@@ -861,6 +882,7 @@ function resetAll() {
   previewImages = [];
   selectedMdContent = null;
   selectedMdName = null;
+  selectedMdOriginalName = null;
   $("combinedInput").value = "";
   $("combinedPreview").style.display = "none";
   $("clearFilesBtn").style.display = "none";
