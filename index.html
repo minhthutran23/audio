@@ -262,7 +262,7 @@
   <div class="col-left">
   <div class="card">
     <h2><span class="num">2</span><span id="section2Title">Ảnh &amp; câu thoại</span></h2>
-    <label class="filebtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
+    <label class="filebtn" id="combinedFileBtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
       <span id="section2FileHint">📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)</span>
       <input type="file" id="combinedInput" accept=".zip,.txt,.csv,.png,.jpg,.jpeg,.mp4" multiple>
     </label>
@@ -307,7 +307,7 @@
   <div class="card">
     <h2><span class="num">3</span>Cập nhật script</h2>
     <p class="hint" style="margin-top:10px">Sửa file code/script bất kỳ. File <code>.yml</code> tự lưu vào <code>.github/workflows/</code>.</p>
-    <label class="filebtn" style="display:flex; justify-content:center; padding:18px; font-size:14px;">
+    <label class="filebtn" id="scriptFileBtn" style="display:flex; justify-content:center; padding:18px; font-size:14px;">
       🧩 Chọn file script cần cập nhật
       <input type="file" id="scriptInput" multiple>
     </label>
@@ -372,6 +372,40 @@ $("projMelloday").addEventListener("click", () => setActiveProject("melloday"));
 
 // Khoi phuc lua chon du an tu lan truoc (mac dinh: tieng Trung)
 setActiveProject(localStorage.getItem("dlg_activeProject") || "chinese");
+
+function setupDragDrop(labelId, inputId) {
+  const label = $(labelId);
+  const input = $(inputId);
+  ["dragenter", "dragover"].forEach(evt => {
+    label.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      label.style.borderColor = "var(--gold)";
+      label.style.background = "#fff8ea";
+    });
+  });
+  ["dragleave", "dragend"].forEach(evt => {
+    label.addEventListener(evt, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      label.style.borderColor = "";
+      label.style.background = "";
+    });
+  });
+  label.addEventListener("drop", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    label.style.borderColor = "";
+    label.style.background = "";
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+}
+
+setupDragDrop("combinedFileBtn", "combinedInput");
+setupDragDrop("scriptFileBtn", "scriptInput");
 
 function escapeHtml(s) {
   return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
