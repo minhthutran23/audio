@@ -1,0 +1,58 @@
+name: Generate Melloday Episode Video (Images + Audio)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install edge-tts pydub moviepy pillow
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu
+
+      - name: Prepare images (crop combined sheet or unzip)
+        run: |
+          mkdir -p images
+          if [ -f combined_sheet.png ] || [ -f combined_sheet.jpg ] || [ -f combined_sheet.jpeg ]; then
+            echo "Phat hien anh gop -> dang cat thanh tung o..."
+            python crop_grid.py
+          elif [ -f batch_images.zip ]; then
+            echo "Phat hien file zip -> dang giai nen..."
+            rm -rf images_tmp
+            unzip -o batch_images.zip -d images_tmp
+            find images_tmp -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) -exec mv {} images/ \;
+            rm -rf images_tmp
+          else
+            echo "Khong tim thay combined_sheet.png/jpg hoac batch_images.zip trong repo."
+            exit 1
+          fi
+
+      - name: Generate episode audio (continuous, no pauses)
+        run: python generate_episode_audio.py melloday-kids-ep02-script.md --line-pause-ms 80 --scene-pause-ms 80
+
+      - name: Build episode video
+        run: python make_episode_video.py melloday-kids-ep02-script.md
+
+      - name: Upload episode audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: episode_audio
+          path: episode_audio/
+
+      - name: Upload episode video
+        uses: actions/upload-artifact@v4
+        with:
+          name: episode_video
+          path: episode_video.mp4
