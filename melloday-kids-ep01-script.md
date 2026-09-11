@@ -3,7 +3,9 @@
 
 ---
 
-**[TITLE CARD] (0:00)**
+### 0. Title Card (0:00–0:06)
+**Visual:** Logo animation with paw-print sparkles settling into place.
+**Narrator (warm, playful):** "Melloday Kids. Episode one: A Messy Morning."
 On-screen text: *Melloday Kids — Episode 01: A Messy Morning*
 SFX: soft chime, paw-print sparkle
 
