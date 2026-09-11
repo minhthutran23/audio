@@ -74,26 +74,122 @@ def _sfx_buzz():
     return _beep(220, 300, gain_db=-8, fade_out_ms=60)
 
 
+def _sfx_pop():
+    return _beep(1400, 60, gain_db=-3, fade_out_ms=20)
+
+
+def _sfx_click():
+    return _beep(2000, 40, gain_db=-4, fade_out_ms=10)
+
+
+def _sfx_thud():
+    return _beep(150, 120, gain_db=-6, fade_out_ms=60)
+
+
+def _sfx_swish():
+    notes = [900, 700, 500]
+    result = AudioSegment.silent(duration=0)
+    for f in notes:
+        result += _beep(f, 60, gain_db=-10, fade_out_ms=30)
+    return result
+
+
+def _sfx_zipper():
+    notes = [500, 650, 800, 950, 1100, 1250]
+    result = AudioSegment.silent(duration=0)
+    for f in notes:
+        result += _beep(f, 35, gain_db=-10, fade_out_ms=10)
+    return result
+
+
+def _sfx_tada():
+    notes = [523, 659, 784, 1046]  # do-mi-son-do, am vang tuoi sang
+    result = AudioSegment.silent(duration=0)
+    for f in notes:
+        result += _beep(f, 140, gain_db=-6, fade_out_ms=100)
+    return result
+
+
+def _sfx_scratch():
+    notes = [1000, 700, 400, 200]
+    result = AudioSegment.silent(duration=0)
+    for f in notes:
+        result += _beep(f, 50, gain_db=-6, fade_out_ms=20)
+    return result
+
+
+def _sfx_funny():
+    notes = [400, 700, 350]
+    result = AudioSegment.silent(duration=0)
+    for f in notes:
+        result += _beep(f, 90, gain_db=-8, fade_out_ms=40)
+    return result
+
+
+def _sfx_suspense():
+    return _beep(180, 500, gain_db=-10, fade_out_ms=250)
+
+
+def _sfx_sniff():
+    return (
+        _beep(300, 90, gain_db=-8, fade_out_ms=30)
+        + AudioSegment.silent(duration=60)
+        + _beep(320, 70, gain_db=-8, fade_out_ms=30)
+    )
+
+
+def _sfx_footsteps():
+    thud = _beep(140, 90, gain_db=-8, fade_out_ms=40)
+    gap = AudioSegment.silent(duration=120)
+    return thud + gap + thud + gap + thud
+
+
+def _sfx_pause(description):
+    """'0.5s pause' -> 0.5s im lang. Neu khong tim thay so giay cu the, mac dinh 0.5s."""
+    m = re.search(r"([\d.]+)\s*s", description)
+    dur_ms = int(float(m.group(1)) * 1000) if m else 500
+    return AudioSegment.silent(duration=dur_ms)
+
+
 def _sfx_default():
     return _beep(880, 150, gain_db=-8)
 
 
 SFX_LIBRARY = [
     (r"alarm", _sfx_alarm),
-    (r"buzz|vibrat", _sfx_buzz),
+    (r"record scratch|scratch", _sfx_scratch),
+    (r"zipper", _sfx_zipper),
+    (r"ta-?da", _sfx_tada),
     (r"sparkle|twinkle", _sfx_sparkle),
     (r"chime|bell", _sfx_chime),
+    (r"buzz|vibrat", _sfx_buzz),
+    (r"sniff", _sfx_sniff),
+    (r"footstep|steps", _sfx_footsteps),
+    (r"pop|surprise", _sfx_pop),
+    (r"click", _sfx_click),
+    (r"place|thud|drop", _sfx_thud),
+    (r"spread|swish", _sfx_swish),
+    (r"funny|comedic|comic", _sfx_funny),
+    (r"suspense|dramatic", _sfx_suspense),
 ]
 
 
 def synth_sfx(description):
     """Doc mo ta SFX (vd 'alarm clock ringing'), tra ve 1 AudioSegment tuong ung.
-    Neu khong khop tu khoa nao, dung 1 tieng "ding" ngan mac dinh - khong bao gio
-    bi loi/thieu am thanh du mo ta la gi."""
+    - "pause"/"silence" -> im lang dung so giay ghi trong mo ta (vd "0.5s pause")
+    - co chu "music" ma khong khop tu khoa cu the nao khac -> chi de 1 khoang lang
+      ngan, vi day la nhac nen that su (can ghep nhac rieng luc dung phim, khong
+      the tong hop bang song sin don gian)
+    - khong khop gi ca -> dung 1 tieng "ting" ngan mac dinh, khong bao gio loi."""
     text = (description or "").lower()
+    if re.search(r"pause|silence", text):
+        return _sfx_pause(text)
     for pattern, fn in SFX_LIBRARY:
         if re.search(pattern, text):
             return fn()
+    if "music" in text:
+        print(f"      (luu y: '{description}' la nhac nen - can ghep nhac that luc dung phim)")
+        return AudioSegment.silent(duration=300)
     return _sfx_default()
 
 # ---- CAU HINH GIONG DOC ----
@@ -284,12 +380,30 @@ async def build_episode(scenes):
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Cach dung: python generate_episode_audio.py duong_dan_script.md")
-        sys.exit(1)
+    import argparse
 
-    md_path = sys.argv[1]
-    scenes = parse_script(md_path)
+    global PAUSE_BETWEEN_LINES_MS, PAUSE_BETWEEN_SCENES_MS
+
+    parser = argparse.ArgumentParser(description="Tao audio tieng Anh tu file script Melloday Kids.")
+    parser.add_argument("md_path", help="Duong dan file script .md")
+    parser.add_argument(
+        "--line-pause-ms", type=int, default=None,
+        help=f"Khoang lang giua cac cau/SFX trong 1 canh (mac dinh {PAUSE_BETWEEN_LINES_MS}ms). "
+             f"Dat gan 0 (vd 80) neu muon doc lien tuc kieu doc thoai, khong ngat quang."
+    )
+    parser.add_argument(
+        "--scene-pause-ms", type=int, default=None,
+        help=f"Khoang lang giua cac canh trong full_episode.mp3 (mac dinh {PAUSE_BETWEEN_SCENES_MS}ms). "
+             f"Dat gan 0 neu muon toan bo episode nghe lien mach, khong ngat quang giua cac canh."
+    )
+    args = parser.parse_args()
+
+    if args.line_pause_ms is not None:
+        PAUSE_BETWEEN_LINES_MS = args.line_pause_ms
+    if args.scene_pause_ms is not None:
+        PAUSE_BETWEEN_SCENES_MS = args.scene_pause_ms
+
+    scenes = parse_script(args.md_path)
     if not scenes:
         print("Khong tim thay canh nao trong file. Kiem tra lai dinh dang file .md.")
         sys.exit(1)
