@@ -219,11 +219,11 @@
 
   <div class="card" style="padding:16px 24px;">
     <label style="margin-bottom:8px; display:block;">Đang làm dự án nào?</label>
-    <div style="display:flex; gap:10px;">
-      <button type="button" class="proj-btn" id="projChinese" style="flex:1; padding:10px; border-radius:8px; border:2px solid var(--gold); background:#fff8ea; font-weight:600; cursor:pointer;">🀄 Tiếng Trung (ảnh + câu thoại)</button>
-      <button type="button" class="proj-btn" id="projMelloday" style="flex:1; padding:10px; border-radius:8px; border:2px solid var(--line); background:#fff; font-weight:600; cursor:pointer;">🐾 Melloday Kids (script)</button>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" class="proj-btn" id="projChinese" style="flex:1; min-width:160px; padding:10px; border-radius:8px; border:2px solid var(--gold); background:#fff8ea; font-weight:600; cursor:pointer;">🀄 Tiếng Trung</button>
+      <button type="button" class="proj-btn" id="projMelloday" style="flex:1; min-width:160px; padding:10px; border-radius:8px; border:2px solid var(--line); background:#fff; font-weight:600; cursor:pointer;">🐾 Melloday Kids</button>
     </div>
-    <p class="hint" style="margin:8px 0 0;">Bấm chọn đúng dự án — công cụ tự đổi file workflow cho bạn, khỏi cần vào "Cài đặt nâng cao" sửa tay.</p>
+    <p class="hint" style="margin:8px 0 0;">Bấm chọn đúng dự án — công cụ tự đổi file workflow + loại file chấp nhận cho bạn, khỏi cần vào "Cài đặt nâng cao" sửa tay.</p>
   </div>
 
   <div class="card">
@@ -344,27 +344,42 @@ const $ = (id) => document.getElementById(id);
 });
 
 const PROJECTS = {
-  chinese: { workflowFile: "generate-story.yml", label: "🀄 Tiếng Trung (ảnh + câu thoại)" },
-  melloday: { workflowFile: "melloday-audio.yml", label: "🐾 Melloday Kids (script)" },
+  chinese: {
+    workflowFile: "generate-story.yml",
+    accept: ".zip,.txt,.csv,.png,.jpg,.jpeg",
+    title: "Ảnh & câu thoại",
+    hint: "📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)",
+    pathLabel: "Đường dẫn ảnh",
+    showDialogueUI: true,
+  },
+  melloday: {
+    workflowFile: "melloday.yml",
+    accept: ".mp4,.zip,.png,.jpg,.jpeg,.md",
+    title: "Video / Ảnh",
+    hint: "📁 Chọn video (.mp4) hoặc ảnh (.zip/.png/.jpg) + script (.md) cùng lúc",
+    pathLabel: "Đường dẫn video/ảnh",
+    showDialogueUI: false,
+  },
 };
 
 function setActiveProject(key) {
-  $("workflowFile").value = PROJECTS[key].workflowFile;
+  const cfg = PROJECTS[key];
+  $("workflowFile").value = cfg.workflowFile;
+  $("combinedInput").setAttribute("accept", cfg.accept);
   localStorage.setItem("dlg_activeProject", key);
-  $("projChinese").style.borderColor = key === "chinese" ? "var(--gold)" : "var(--line)";
-  $("projChinese").style.background = key === "chinese" ? "#fff8ea" : "#fff";
-  $("projMelloday").style.borderColor = key === "melloday" ? "var(--gold)" : "var(--line)";
-  $("projMelloday").style.background = key === "melloday" ? "#fff8ea" : "#fff";
 
-  const isMelloday = key === "melloday";
-  $("section2Title").textContent = isMelloday ? "Video" : "Ảnh & câu thoại";
-  $("section2FileHint").textContent = isMelloday
-    ? "📁 Chọn video (.mp4) + script (.md) cùng lúc, hoặc chỉ 1 trong 2"
-    : "📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)";
-  $("imagePathLabel").textContent = isMelloday ? "Đường dẫn video" : "Đường dẫn ảnh";
-  $("dialoguePathWrap").style.display = isMelloday ? "none" : "";
-  $("dialogueOnlySection").style.display = isMelloday ? "none" : "";
-  $("previewBtn").style.display = isMelloday ? "none" : "";
+  ["projChinese", "projMelloday"].forEach((id, i) => {
+    const k = ["chinese", "melloday"][i];
+    $(id).style.borderColor = key === k ? "var(--gold)" : "var(--line)";
+    $(id).style.background = key === k ? "#fff8ea" : "#fff";
+  });
+
+  $("section2Title").textContent = cfg.title;
+  $("section2FileHint").textContent = cfg.hint;
+  $("imagePathLabel").textContent = cfg.pathLabel;
+  $("dialoguePathWrap").style.display = cfg.showDialogueUI ? "" : "none";
+  $("dialogueOnlySection").style.display = cfg.showDialogueUI ? "" : "none";
+  $("previewBtn").style.display = cfg.showDialogueUI ? "" : "none";
 }
 
 $("projChinese").addEventListener("click", () => setActiveProject("chinese"));
@@ -797,7 +812,7 @@ $("combinedInput").addEventListener("change", async (e) => {
 
   if (mdFile) {
     selectedMdContent = await readTextFile(mdFile);
-    selectedMdName = "melloday-kids-ep01-script.md";
+    selectedMdName = "melloday_script.md";
     messages.push(`📄 Script: <b>${escapeHtml(mdFile.name)}</b> → sẽ lưu vào <code>${selectedMdName}</code>`);
   }
 
