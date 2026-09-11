@@ -1102,17 +1102,17 @@ async function pushImages(owner, repo, branch, token) {
   const buffer = await readFileAsArrayBuffer(selectedZipFile);
   const base64Content = arrayBufferToBase64(buffer);
 
-  const blob = await githubRequest(`${base}/git/blobs`, token, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content: base64Content, encoding: "base64" })
-  });
-
   const maxAttempts = 4;
   let lastErr;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
+      const blob = await githubRequest(`${base}/git/blobs`, token, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: base64Content, encoding: "base64" })
+      });
+
       const ref = await githubRequest(`${base}/git/ref/heads/${encodeURIComponent(branch)}`, token);
       const currentCommitSha = ref.object.sha;
       const currentCommit = await githubRequest(`${base}/git/commits/${currentCommitSha}`, token);
@@ -1146,9 +1146,10 @@ async function pushImages(owner, repo, branch, token) {
       return { skipped: false, path: imagePath, commitUrl: newCommit.html_url };
     } catch (err) {
       lastErr = err;
-      const isRaceCondition = /fast forward|not a fast/i.test(err.message || "");
-      if (isRaceCondition && attempt < maxAttempts) {
-        await sleep(800 * attempt);
+      const msg = err.message || "";
+      const isRetryable = /fast forward|not a fast|failed to fetch|network|timeout/i.test(msg);
+      if (isRetryable && attempt < maxAttempts) {
+        await sleep(1200 * attempt);
         continue;
       }
       throw err;
