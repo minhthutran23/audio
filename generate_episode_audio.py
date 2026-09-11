@@ -31,17 +31,81 @@ import sys
 
 import edge_tts
 from pydub import AudioSegment
+from pydub.generators import Sine
+
+
+# ---- THU VIEN HIEU UNG AM THANH (SFX) - tu tong hop, khong can file ngoai ----
+# Moi dong "SFX: mo ta" trong script se duoc doi thanh 1 doan am thanh tuong ung,
+# chen dung vi tri giua cac cau thoai.
+
+def _beep(freq=1000, duration_ms=150, gain_db=-6, fade_out_ms=30):
+    return (
+        Sine(freq)
+        .to_audio_segment(duration=duration_ms)
+        .fade_in(8)
+        .fade_out(fade_out_ms)
+        .apply_gain(gain_db)
+    )
+
+
+def _sfx_alarm():
+    beep = _beep(1000, 150, gain_db=-4)
+    gap = AudioSegment.silent(duration=90)
+    return beep + gap + beep + gap + beep
+
+
+def _sfx_chime():
+    notes = [660, 880, 1320]
+    result = AudioSegment.silent(duration=0)
+    for f in notes:
+        result += _beep(f, 220, gain_db=-8, fade_out_ms=160)
+    return result
+
+
+def _sfx_sparkle():
+    notes = [1200, 1600, 2000, 1600]
+    result = AudioSegment.silent(duration=0)
+    for f in notes:
+        result += _beep(f, 80, gain_db=-12, fade_out_ms=40)
+    return result
+
+
+def _sfx_buzz():
+    return _beep(220, 300, gain_db=-8, fade_out_ms=60)
+
+
+def _sfx_default():
+    return _beep(880, 150, gain_db=-8)
+
+
+SFX_LIBRARY = [
+    (r"alarm", _sfx_alarm),
+    (r"buzz|vibrat", _sfx_buzz),
+    (r"sparkle|twinkle", _sfx_sparkle),
+    (r"chime|bell", _sfx_chime),
+]
+
+
+def synth_sfx(description):
+    """Doc mo ta SFX (vd 'alarm clock ringing'), tra ve 1 AudioSegment tuong ung.
+    Neu khong khop tu khoa nao, dung 1 tieng "ding" ngan mac dinh - khong bao gio
+    bi loi/thieu am thanh du mo ta la gi."""
+    text = (description or "").lower()
+    for pattern, fn in SFX_LIBRARY:
+        if re.search(pattern, text):
+            return fn()
+    return _sfx_default()
 
 # ---- CAU HINH GIONG DOC ----
 # Cac giong "Multilingual" (Ava, Andrew...) la giong the he moi cua Microsoft,
 # nghe tu nhien/bieu cam hon han giong cu (Aria, Guy...).
 # Xem danh sach day du bang lenh: edge-tts --list-voices
 VOICES = {
-    "Narrator": {"voice": "en-US-AndrewMultilingualNeural", "rate": "+0%", "pitch": "+0Hz"},
-    "Mel": {"voice": "en-US-AnaNeural", "rate": "+3%", "pitch": "+8Hz"},  # giong be gai, tre + cute
+    "Narrator": {"voice": "en-US-AndrewMultilingualNeural", "rate": "+15%", "pitch": "+0Hz"},
+    "Mel": {"voice": "en-US-AnaNeural", "rate": "+15%", "pitch": "+8Hz"},  # giong be gai, tre + cute
     "Biscuit": {"voice": "en-US-JennyNeural", "rate": "+35%", "pitch": "+60Hz"},  # chi dung de "sua", khong doc thoai that
 }
-DEFAULT_VOICE = {"voice": "en-US-AndrewMultilingualNeural", "rate": "+0%", "pitch": "+0Hz"}
+DEFAULT_VOICE = {"voice": "en-US-AndrewMultilingualNeural", "rate": "+15%", "pitch": "+0Hz"}
 
 # ---- CAM XUC -> DIEU CHINH TOC DO / CAO DO ----
 # (rate_offset_%, pitch_offset_Hz) cong them vao gia tri goc cua giong.
@@ -82,7 +146,7 @@ def emotion_offsets(parenthetical):
     return rate_total, pitch_total
 
 
-PAUSE_BETWEEN_LINES_MS = 450   # khoang lang giua cac cau thoai trong 1 canh
+PAUSE_BETWEEN_LINES_MS = 350   # khoang lang giua cac cau thoai trong 1 canh (rut ngan cho nhip nhanh hon)
 PAUSE_BETWEEN_SCENES_MS = 900  # khoang lang giua cac canh trong file full_episode
 
 OUTPUT_DIR = "episode_audio"
@@ -90,7 +154,11 @@ TEMP_DIR = os.path.join(OUTPUT_DIR, "_tmp_lines")
 
 
 def parse_script(md_path):
-    """Doc file .md, tra ve list[(scene_num, scene_title, [(speaker, parenthetical, line), ...])]"""
+    """Doc file .md, tra ve list[(scene_num, scene_title, items)] trong do items
+    la danh sach cac phan tu THEO DUNG THU TU xuat hien trong file, moi phan tu la:
+      ("line", speaker, parenthetical, text)   - 1 cau thoai
+      ("sfx", description)                     - 1 hieu ung am thanh (dong "SFX: ...")
+    """
     with open(md_path, encoding="utf-8") as f:
         content = f.read()
 
@@ -98,6 +166,7 @@ def parse_script(md_path):
     scenes = list(scene_pattern.finditer(content))
     # Nhom 2: phan trong ngoac don (mo ta cam xuc/hanh dong), co the khong co.
     line_pattern = re.compile(r'\*\*(\w+)\s*(?:\(([^)]*)\))?:\*\*\s*"([^"]+)"')
+    sfx_pattern = re.compile(r"^SFX:\s*(.+)$", re.MULTILINE)
 
     result = []
     for i, m in enumerate(scenes):
@@ -106,8 +175,16 @@ def parse_script(md_path):
         start = m.end()
         end = scenes[i + 1].start() if i + 1 < len(scenes) else len(content)
         block = content[start:end]
-        lines = line_pattern.findall(block)  # [(speaker, parenthetical, text), ...]
-        result.append((scene_num, title, lines))
+
+        raw_items = []
+        for dm in line_pattern.finditer(block):
+            raw_items.append((dm.start(), "line", dm.group(1), dm.group(2), dm.group(3)))
+        for sm in sfx_pattern.finditer(block):
+            raw_items.append((sm.start(), "sfx", sm.group(1).strip()))
+        raw_items.sort(key=lambda x: x[0])
+
+        items = [tuple(it[1:]) for it in raw_items]  # bo cot vi tri, chi giu du lieu
+        result.append((scene_num, title, items))
     return result
 
 
@@ -166,22 +243,31 @@ async def build_episode(scenes):
     scene_pause = AudioSegment.silent(duration=PAUSE_BETWEEN_SCENES_MS)
     line_pause = AudioSegment.silent(duration=PAUSE_BETWEEN_LINES_MS)
 
-    for scene_num, title, lines in scenes:
-        if not lines:
+    for scene_num, title, items in scenes:
+        if not items:
             print(f"[Canh {scene_num:02d}] '{title}' - khong co thoai, bo qua.")
             continue
 
-        print(f"[Canh {scene_num:02d}] '{title}' - {len(lines)} dong thoai")
+        print(f"[Canh {scene_num:02d}] '{title}' - {len(items)} phan tu")
         scene_audio = AudioSegment.silent(duration=0)
+        line_idx = 0
 
-        for idx, (speaker, parenthetical, text) in enumerate(lines):
-            tmp_path = os.path.join(TEMP_DIR, f"s{scene_num:02d}_{idx:02d}.mp3")
-            tag = f" ({parenthetical})" if parenthetical else ""
-            print(f"    [{speaker}{tag}] {text}")
-            await synth_line(text, speaker, parenthetical, tmp_path)
-            clip = AudioSegment.from_file(tmp_path)
-            scene_audio += clip
-            if idx < len(lines) - 1:
+        for idx, item in enumerate(items):
+            if item[0] == "line":
+                _, speaker, parenthetical, text = item
+                tmp_path = os.path.join(TEMP_DIR, f"s{scene_num:02d}_{line_idx:02d}.mp3")
+                line_idx += 1
+                tag = f" ({parenthetical})" if parenthetical else ""
+                print(f"    [{speaker}{tag}] {text}")
+                await synth_line(text, speaker, parenthetical, tmp_path)
+                clip = AudioSegment.from_file(tmp_path)
+                scene_audio += clip
+            else:
+                _, description = item
+                print(f"    [SFX] {description}")
+                scene_audio += synth_sfx(description)
+
+            if idx < len(items) - 1:
                 scene_audio += line_pause
 
         scene_out = os.path.join(OUTPUT_DIR, f"scene_{scene_num:02d}.mp3")
