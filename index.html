@@ -954,6 +954,8 @@ function triggerDownload(url, filename) {
   a.remove();
 }
 
+const SKIP_AUTO_DOWNLOAD = ["episode_audio"]; // van tai ve de co link thu cong, nhung khong tu dong bung ra
+
 async function fetchArtifacts(owner, repo, runId, token) {
   const data = await githubRequest(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}/artifacts`, token);
   const results = [];
@@ -965,8 +967,10 @@ async function fetchArtifacts(owner, repo, runId, token) {
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     results.push({ name: art.name, url });
-    triggerDownload(url, `${art.name}.zip`);
-    await sleep(400); // cach nhau chut it de trinh duyet khong chan tai nhieu file cung luc
+    if (!SKIP_AUTO_DOWNLOAD.includes(art.name)) {
+      triggerDownload(url, `${art.name}.zip`);
+      await sleep(400); // cach nhau chut it de trinh duyet khong chan tai nhieu file cung luc
+    }
   }
   return results;
 }
