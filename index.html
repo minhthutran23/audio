@@ -95,8 +95,8 @@
   input:focus, textarea:focus { outline: none; border-color: var(--gold); }
   textarea { min-height: 200px; resize: vertical; line-height: 1.6; font-size: 15px; }
 
-  .row { display: flex; gap: 12px; }
-  .row > div { flex: 1; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 140px; }
 
   .filebtn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -217,10 +217,51 @@
     </div>
   </div>
 
+  <div class="card" style="padding:16px 24px;">
+    <label style="margin-bottom:8px; display:block;">Đang làm dự án nào?</label>
+    <div style="display:flex; gap:10px;">
+      <button type="button" class="proj-btn" id="projChinese" style="flex:1; padding:10px; border-radius:8px; border:2px solid var(--gold); background:#fff8ea; font-weight:600; cursor:pointer;">🀄 Tiếng Trung (ảnh + câu thoại)</button>
+      <button type="button" class="proj-btn" id="projMelloday" style="flex:1; padding:10px; border-radius:8px; border:2px solid var(--line); background:#fff; font-weight:600; cursor:pointer;">🐾 Melloday Kids (script)</button>
+    </div>
+    <p class="hint" style="margin:8px 0 0;">Bấm chọn đúng dự án — công cụ tự đổi file workflow cho bạn, khỏi cần vào "Cài đặt nâng cao" sửa tay.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>Kết nối GitHub</h2>
+    <div class="row">
+      <div>
+        <label>Owner</label>
+        <input type="text" id="owner" placeholder="minhthutran23" value="minhthutran23">
+      </div>
+      <div>
+        <label>Repo</label>
+        <input type="text" id="repo" placeholder="audio" value="audio">
+      </div>
+      <div>
+        <label>Branch</label>
+        <input type="text" id="branch" placeholder="main" value="main">
+      </div>
+      <div>
+        <label>File workflow</label>
+        <input type="text" id="workflowFile" placeholder="generate-story.yml" value="generate-story.yml">
+      </div>
+    </div>
+    <label style="margin-top:14px">Personal access token</label>
+    <input type="password" id="token" placeholder="github_pat_xxxxxxxx">
+    <label style="display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer;">
+      <input type="checkbox" id="autoRun" checked style="width:auto;">
+      <span style="font-size:13px; color:var(--ink-soft);">Tự động chạy workflow và tải video sau khi cập nhật</span>
+    </label>
+    <details style="margin-top:10px">
+      <summary>🔒 Về token GitHub (bấm để xem)</summary>
+      <p class="hint" style="margin-top:10px;">Token chỉ dùng trong trình duyệt của bạn để gọi GitHub, không gửi đi đâu khác, không được lưu lại. Tạo <b>Fine-grained token</b> (Settings → Developer settings → Personal access tokens), giới hạn cho đúng 1 repo, bật 3 quyền: <b>Contents</b>, <b>Actions</b>, <b>Workflows</b> đều để Read and write.</p>
+    </details>
+  </div>
+
 <div class="two-col">
   <div class="col-left">
   <div class="card">
-    <h2><span class="num">1</span>Ảnh &amp; câu thoại</h2>
+    <h2><span class="num">2</span>Ảnh &amp; câu thoại</h2>
     <label class="filebtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
       📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)
       <input type="file" id="combinedInput" accept=".zip,.txt,.csv,.png,.jpg,.jpeg" multiple>
@@ -261,46 +302,9 @@
   </div>
 
   <div class="col-right">
-  <details class="card" style="padding:14px 24px;">
-    <summary style="font-size:13px; color:var(--ink-soft); cursor:pointer;">🔒 Về token GitHub (bấm để xem)</summary>
-    <p class="hint" style="margin-top:10px;">Token chỉ dùng trong trình duyệt của bạn để gọi GitHub, không gửi đi đâu khác, không được lưu lại. Tạo <b>Fine-grained token</b> (Settings → Developer settings → Personal access tokens), giới hạn cho đúng 1 repo, bật 3 quyền: <b>Contents</b>, <b>Actions</b>, <b>Workflows</b> đều để Read and write.</p>
-  </details>
   <div class="card">
-    <h2><span class="num">2</span>Kết nối GitHub</h2>
-    <label>Personal access token</label>
-    <input type="password" id="token" placeholder="github_pat_xxxxxxxx">
-    <label style="display:flex; align-items:center; gap:8px; margin-top:12px; cursor:pointer;">
-      <input type="checkbox" id="autoRun" checked style="width:auto;">
-      <span style="font-size:13px; color:var(--ink-soft);">Tự động chạy workflow và tải video sau khi cập nhật</span>
-    </label>
-    <details style="margin-top:10px">
-      <summary>Cài đặt nâng cao (owner/repo/branch/workflow)</summary>
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label>Owner</label>
-          <input type="text" id="owner" placeholder="minhthutran23" value="minhthutran23">
-        </div>
-        <div>
-          <label>Repo</label>
-          <input type="text" id="repo" placeholder="audio" value="audio">
-        </div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <div>
-          <label>Branch</label>
-          <input type="text" id="branch" placeholder="main" value="main">
-        </div>
-        <div>
-          <label>File workflow</label>
-          <input type="text" id="workflowFile" placeholder="generate-story.yml" value="generate-story.yml">
-        </div>
-      </div>
-    </details>
-  </div>
-
-  <details class="card">
-    <summary style="font-size:15px; font-weight:600; cursor:pointer;"><span class="num" style="display:inline-flex; margin-right:8px;">3</span>Cập nhật script (nâng cao)</summary>
-    <p class="hint" style="margin-top:10px">Dùng khi sửa <code>generate_audio.py</code>, <code>make_video.py</code>, file workflow... File <code>.yml</code>/<code>.yaml</code> tự lưu vào <code>.github/workflows/</code>.</p>
+    <h2><span class="num">3</span>Cập nhật script</h2>
+    <p class="hint" style="margin-top:10px">Sửa file code/script bất kỳ. File <code>.yml</code> tự lưu vào <code>.github/workflows/</code>.</p>
     <label class="filebtn" style="display:flex; justify-content:center; padding:18px; font-size:14px;">
       🧩 Chọn file script cần cập nhật
       <input type="file" id="scriptInput" multiple>
@@ -309,11 +313,11 @@
     <button class="secondary" id="clearScriptBtn" style="display:none; margin-top:6px; padding:7px; font-size:12.5px;">✕ Xoá file đã chọn, chọn lại</button>
     <label style="margin-top:10px">Thư mục đích cho file khác (để trống = gốc repo)</label>
     <input type="text" id="scriptTargetDir" placeholder="(để trống = gốc repo)">
-  </details>
+  </div>
   </div>
 </div>
 
-  <button class="primary" id="pushAllBtn">Cập nhật + chạy + tải video</button>
+  <button class="primary" id="pushAllBtn">Update!</button>
 
   <div class="steps" id="steps">
     <div class="step" id="step-img"><span class="dot"></span><span class="label">Cập nhật ảnh</span></div>
@@ -336,6 +340,26 @@ const $ = (id) => document.getElementById(id);
   if (saved) $(id).value = saved;
   $(id).addEventListener("input", () => localStorage.setItem("dlg_" + id, $(id).value));
 });
+
+const PROJECTS = {
+  chinese: { workflowFile: "generate-story.yml", label: "🀄 Tiếng Trung (ảnh + câu thoại)" },
+  melloday: { workflowFile: "melloday-audio.yml", label: "🐾 Melloday Kids (script)" },
+};
+
+function setActiveProject(key) {
+  $("workflowFile").value = PROJECTS[key].workflowFile;
+  localStorage.setItem("dlg_activeProject", key);
+  $("projChinese").style.borderColor = key === "chinese" ? "var(--gold)" : "var(--line)";
+  $("projChinese").style.background = key === "chinese" ? "#fff8ea" : "#fff";
+  $("projMelloday").style.borderColor = key === "melloday" ? "var(--gold)" : "var(--line)";
+  $("projMelloday").style.background = key === "melloday" ? "#fff8ea" : "#fff";
+}
+
+$("projChinese").addEventListener("click", () => setActiveProject("chinese"));
+$("projMelloday").addEventListener("click", () => setActiveProject("melloday"));
+
+// Khoi phuc lua chon du an tu lan truoc (mac dinh: tieng Trung)
+setActiveProject(localStorage.getItem("dlg_activeProject") || "chinese");
 
 function escapeHtml(s) {
   return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -748,6 +772,30 @@ $("clearFilesBtn").addEventListener("click", () => {
   $("imagePath").value = "batch_images.zip";
 });
 
+function resetAll() {
+  selectedZipFile = null;
+  previewImages = [];
+  $("combinedInput").value = "";
+  $("combinedPreview").style.display = "none";
+  $("clearFilesBtn").style.display = "none";
+  $("previewPanel").style.display = "none";
+  $("imagePath").value = "batch_images.zip";
+
+  selectedScriptFiles = [];
+  $("scriptInput").value = "";
+  $("scriptPreview").style.display = "none";
+  $("clearScriptBtn").style.display = "none";
+
+  $("lines").value = "";
+  renderPreview();
+
+  $("steps").className = "steps";
+  ["step-img", "step-txt", "step-script", "step-run", "step-dl"].forEach(id => setStep(id, ""));
+  const statusEl = $("status");
+  statusEl.className = "status";
+  statusEl.innerHTML = "";
+}
+
 function buildPythonFile(scenes) {
   const header = `# -*- coding: utf-8 -*-
 """
@@ -1125,7 +1173,7 @@ $("pushAllBtn").addEventListener("click", async () => {
     html += "Giờ vào tab Actions trên GitHub để chạy workflow.";
     showStatus(hadError ? "err" : "ok", html);
     btn.disabled = false;
-    btn.textContent = "Cập nhật + chạy + tải video";
+    btn.textContent = "Update!";
     return;
   }
 
@@ -1152,7 +1200,7 @@ $("pushAllBtn").addEventListener("click", async () => {
       html += `Workflow chạy xong nhưng bị lỗi (${finalRun.conclusion}). <a href="${finalRun.html_url}" target="_blank">Xem log lỗi</a><br>`;
       showStatus("err", html);
       btn.disabled = false;
-      btn.textContent = "Cập nhật + chạy + tải video";
+      btn.textContent = "Update!";
       return;
     }
 
@@ -1168,6 +1216,7 @@ $("pushAllBtn").addEventListener("click", async () => {
       html += "Hoàn tất! Đã tự tải về máy — nếu trình duyệt chặn, bấm link tải thủ công: ";
       html += artifacts.map(a => `<a href="${a.url}" download="${a.name}.zip">${a.name}</a>`).join(" · ");
       html += `<br><a href="${finalRun.html_url}" target="_blank">Xem chi tiết trên GitHub</a>`;
+      html += `<br><button type="button" onclick="resetAll()" style="margin-top:10px; padding:8px 16px; border-radius:7px; border:none; background:var(--ok); color:#fff; font-weight:600; cursor:pointer;">✓ OK, làm mới để up ảnh/file khác</button>`;
     } else {
       html += `Workflow chạy xong nhưng không thấy artifact nào. <a href="${finalRun.html_url}" target="_blank">Xem trên GitHub</a>`;
     }
@@ -1180,7 +1229,7 @@ $("pushAllBtn").addEventListener("click", async () => {
   }
 
   btn.disabled = false;
-  btn.textContent = "Cập nhật + chạy + tải video";
+  btn.textContent = "Update!";
 });
 </script>
 </body>
