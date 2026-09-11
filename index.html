@@ -359,7 +359,7 @@ function setActiveProject(key) {
   const isMelloday = key === "melloday";
   $("section2Title").textContent = isMelloday ? "Video" : "Ảnh & câu thoại";
   $("section2FileHint").textContent = isMelloday
-    ? "📁 Chọn file video (.mp4)"
+    ? "📁 Chọn video (.mp4) + script (.md) cùng lúc, hoặc chỉ 1 trong 2"
     : "📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)";
   $("imagePathLabel").textContent = isMelloday ? "Đường dẫn video" : "Đường dẫn ảnh";
   $("dialoguePathWrap").style.display = isMelloday ? "none" : "";
@@ -678,6 +678,8 @@ $("nextSceneBtn").addEventListener("click", () => {
 });
 
 let selectedZipFile = null;
+let selectedMdContent = null;
+let selectedMdName = null;
 
 function readTextFile(file) {
   return new Promise((resolve, reject) => {
@@ -720,6 +722,7 @@ $("combinedInput").addEventListener("change", async (e) => {
   let zipFile = null;
   let sheetFile = null;
   let videoFile = null;
+  let mdFile = null;
   let textFile = null;
 
   for (const f of files) {
@@ -730,6 +733,8 @@ $("combinedInput").addEventListener("change", async (e) => {
       sheetFile = f;
     } else if (ext === "mp4") {
       videoFile = f;
+    } else if (ext === "md") {
+      mdFile = f;
     } else if (ext === "txt" || ext === "csv") {
       textFile = f;
     }
@@ -756,6 +761,12 @@ $("combinedInput").addEventListener("change", async (e) => {
     }
   }
 
+  if (mdFile) {
+    selectedMdContent = await readTextFile(mdFile);
+    selectedMdName = "melloday-kids-ep01-script.md";
+    messages.push(`📄 Script: <b>${escapeHtml(mdFile.name)}</b> → sẽ lưu vào <code>${selectedMdName}</code>`);
+  }
+
   if (textFile) {
     const text = await readTextFile(textFile);
     $("lines").value = text;
@@ -764,9 +775,9 @@ $("combinedInput").addEventListener("change", async (e) => {
     messages.push(`📄 Câu thoại: <b>${escapeHtml(textFile.name)}</b> (${count} dòng)`);
   }
 
-  const unrecognized = files.filter(f => f !== zipFile && f !== sheetFile && f !== videoFile && f !== textFile);
+  const unrecognized = files.filter(f => f !== zipFile && f !== sheetFile && f !== videoFile && f !== mdFile && f !== textFile);
   if (unrecognized.length) {
-    messages.push(`⚠️ Không nhận diện được: ${unrecognized.map(f => escapeHtml(f.name)).join(", ")} (chỉ hỗ trợ .zip, .png/.jpg, .txt, .csv)`);
+    messages.push(`⚠️ Không nhận diện được: ${unrecognized.map(f => escapeHtml(f.name)).join(", ")} (chỉ hỗ trợ .zip, .png/.jpg, .mp4, .md, .txt, .csv)`);
   }
 
   const wrap = $("combinedPreview");
@@ -787,6 +798,8 @@ $("combinedInput").addEventListener("change", async (e) => {
 $("clearFilesBtn").addEventListener("click", () => {
   selectedZipFile = null;
   previewImages = [];
+  selectedMdContent = null;
+  selectedMdName = null;
   $("combinedInput").value = "";
   $("combinedPreview").style.display = "none";
   $("clearFilesBtn").style.display = "none";
@@ -797,6 +810,8 @@ $("clearFilesBtn").addEventListener("click", () => {
 function resetAll() {
   selectedZipFile = null;
   previewImages = [];
+  selectedMdContent = null;
+  selectedMdName = null;
   $("combinedInput").value = "";
   $("combinedPreview").style.display = "none";
   $("clearFilesBtn").style.display = "none";
@@ -1006,6 +1021,12 @@ async function pushAllScriptFiles(owner, repo, branch, token) {
   return { skipped: false, files: results, errors: errors.length ? errors : undefined };
 }
 
+async function pushMdScript(owner, repo, branch, token) {
+  if (!selectedMdContent) return { skipped: true };
+  const r = await pushGenericFile(owner, repo, branch, token, selectedMdName, selectedMdContent);
+  return { skipped: false, count: null, path: r.path, commitUrl: r.commitUrl, isMd: true };
+}
+
 async function pushDialogue(owner, repo, branch, token) {
   const path = $("path").value.trim() || "dialogue_data.py";
   const scenes = parseLines($("lines").value);
@@ -1108,7 +1129,7 @@ $("pushAllBtn").addEventListener("click", async () => {
     showStatus("err", "Điền đủ tên tài khoản, tên repo, và token ở mục 1 trước đã.");
     return;
   }
-  if (!selectedZipFile && !parseLines($("lines").value).length && !selectedScriptFiles.length) {
+  if (!selectedZipFile && !parseLines($("lines").value).length && !selectedMdContent && !selectedScriptFiles.length) {
     showStatus("err", "Chưa chọn ảnh, câu thoại, hay file script nào để cập nhật.");
     return;
   }
@@ -1118,7 +1139,7 @@ $("pushAllBtn").addEventListener("click", async () => {
   btn.textContent = "Đang cập nhật...";
   $("steps").className = "steps show";
   setStep("step-img", selectedZipFile ? "pending" : "skip");
-  setStep("step-txt", parseLines($("lines").value).length ? "pending" : "skip");
+  setStep("step-txt", (parseLines($("lines").value).length || selectedMdContent) ? "pending" : "skip");
   setStep("step-script", selectedScriptFiles.length ? "pending" : "skip");
   showStatus("ok", "Đang kết nối tới GitHub...");
 
@@ -1140,6 +1161,10 @@ $("pushAllBtn").addEventListener("click", async () => {
   try {
     if (parseLines($("lines").value).length) {
       const r = await pushDialogue(owner, repo, branch, token);
+      results.txt = r;
+      setStep("step-txt", "ok");
+    } else if (selectedMdContent) {
+      const r = await pushMdScript(owner, repo, branch, token);
       results.txt = r;
       setStep("step-txt", "ok");
     }
@@ -1170,11 +1195,15 @@ $("pushAllBtn").addEventListener("click", async () => {
     html += `Cập nhật ảnh thất bại: ${results.img.error}<br>`;
   }
   if (results.txt && !results.txt.error && !results.txt.skipped) {
-    html += `${results.txt.count} câu thoại đã cập nhật vào <b>${results.txt.path}</b>. `;
+    if (results.txt.isMd) {
+      html += `Script đã cập nhật vào <b>${results.txt.path}</b>. `;
+    } else {
+      html += `${results.txt.count} câu thoại đã cập nhật vào <b>${results.txt.path}</b>. `;
+    }
     if (results.txt.commitUrl) html += `<a href="${results.txt.commitUrl}" target="_blank">Xem commit</a><br>`;
   }
   if (results.txt && results.txt.error) {
-    html += `Cập nhật câu thoại thất bại: ${results.txt.error}<br>`;
+    html += `Cập nhật câu thoại/script thất bại: ${results.txt.error}<br>`;
   }
   if (results.script && !results.script.error && !results.script.skipped) {
     html += `Đã cập nhật ${results.script.files.length} file script: ${results.script.files.map(f => f.path).join(", ")}<br>`;
