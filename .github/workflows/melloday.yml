@@ -1,0 +1,41 @@
+name: Generate Melloday Episode
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install edge-tts pydub moviepy pillow
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu
+
+      - name: Generate episode audio
+        run: python generate_episode_audio.py melloday_script.md
+
+      - name: Merge audio + subtitles into video
+        run: python merge_audio_video.py
+
+      - name: Upload episode audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: episode_audio
+          path: episode_audio/
+
+      - name: Upload final video
+        uses: actions/upload-artifact@v4
+        with:
+          name: melloday_final
+          path: melloday_final.mp4
