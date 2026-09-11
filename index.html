@@ -683,7 +683,7 @@ function readTextFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (ev) => resolve(ev.target.result);
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error(`Không đọc được file: ${file.name}`));
     reader.readAsText(file, "UTF-8");
   });
 }
@@ -856,7 +856,7 @@ function readFileAsArrayBuffer(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error(`Không đọc được file: ${file.name}`));
     reader.readAsArrayBuffer(file);
   });
 }
