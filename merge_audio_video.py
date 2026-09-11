@@ -20,11 +20,11 @@ VIDEO_FILE = "story_final.mp4"
 AUDIO_DIR = "episode_audio"
 OUTPUT_FILE = "melloday_ep01_final.mp4"
 
-# So giay MOI CANH chiem tren video that (canh 0 la title card)
+# So giay MOI CANH chiem tren video that (canh 1 la title card)
 SCENE_DURATIONS = {
-    0: 6,
-    1: 10, 2: 10, 3: 10, 4: 10, 5: 10,
-    6: 10, 7: 10, 8: 10, 9: 10, 10: 10,
+    1: 6,
+    2: 10, 3: 10, 4: 10, 5: 10, 6: 10,
+    7: 10, 8: 10, 9: 10, 10: 10, 11: 10,
 }
 
 
