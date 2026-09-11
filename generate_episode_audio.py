@@ -23,7 +23,9 @@ Ket qua: thu muc "episode_audio/" gom:
 """
 
 import asyncio
+import hashlib
 import os
+import random
 import re
 import sys
 
@@ -36,8 +38,8 @@ from pydub import AudioSegment
 # Xem danh sach day du bang lenh: edge-tts --list-voices
 VOICES = {
     "Narrator": {"voice": "en-US-AndrewMultilingualNeural", "rate": "+0%", "pitch": "+0Hz"},
-    "Mel": {"voice": "en-US-AvaMultilingualNeural", "rate": "+0%", "pitch": "+0Hz"},
-    "Biscuit": {"voice": "en-US-AnaNeural", "rate": "+8%", "pitch": "+25Hz"},  # giong tre con, cao vui tai
+    "Mel": {"voice": "en-US-AnaNeural", "rate": "+3%", "pitch": "+8Hz"},  # giong be gai, tre + cute
+    "Biscuit": {"voice": "en-US-JennyNeural", "rate": "+35%", "pitch": "+60Hz"},  # chi dung de "sua", khong doc thoai that
 }
 DEFAULT_VOICE = {"voice": "en-US-AndrewMultilingualNeural", "rate": "+0%", "pitch": "+0Hz"}
 
@@ -109,6 +111,31 @@ def parse_script(md_path):
     return result
 
 
+BARK_WORDS = ["Woof", "Ruff", "Arf", "Yip"]
+
+
+def biscuit_bark_text(original_text):
+    """Doi cau thoai cua Biscuit thanh tieng sua "Woof! Woof!" thay vi doc
+    nguyen van (nghe khong ra tieng nguoi khi ep giong cho vao cau tieng Anh
+    day du). So tieng sua ti le theo do dai cau goc de van giu duoc nhip
+    dieu / muc do hao hung cua dong thoai."""
+    word_count = len(original_text.split())
+    if word_count <= 2:
+        n_barks = 1
+    elif word_count <= 5:
+        n_barks = 2
+    else:
+        n_barks = 3
+
+    # chon tu "sua" on dinh theo noi dung cau (de cung 1 cau luon ra cung ket qua)
+    seed = int(hashlib.md5(original_text.encode("utf-8")).hexdigest(), 16)
+    rng = random.Random(seed)
+    word = rng.choice(BARK_WORDS)
+
+    punct = "?" if original_text.strip().endswith("?") else "!"
+    return " ".join([f"{word}{punct}"] * n_barks)
+
+
 async def synth_line(text, speaker, parenthetical, out_path):
     cfg = VOICES.get(speaker, DEFAULT_VOICE)
     base_rate = parse_rate_or_pitch(cfg["rate"], "%")
@@ -117,11 +144,13 @@ async def synth_line(text, speaker, parenthetical, out_path):
     rate_off, pitch_off = emotion_offsets(parenthetical)
 
     # gioi han bien do de khong bi qua da/meo tieng
-    final_rate = max(-50, min(50, base_rate + rate_off))
-    final_pitch = max(-50, min(50, base_pitch + pitch_off))
+    final_rate = max(-50, min(80, base_rate + rate_off))
+    final_pitch = max(-50, min(80, base_pitch + pitch_off))
+
+    speak_text = biscuit_bark_text(text) if speaker == "Biscuit" else text
 
     communicate = edge_tts.Communicate(
-        text,
+        speak_text,
         cfg["voice"],
         rate=f"{final_rate:+d}%",
         pitch=f"{final_pitch:+d}Hz",
