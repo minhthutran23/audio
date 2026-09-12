@@ -17,13 +17,16 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install edge-tts
+        run: |
+          pip install edge-tts moviepy
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
 
-      - name: Generate narration audio
+      - name: Generate narration video (black background)
         run: python generate_simple_audio.py
 
-      - name: Upload narration audio
+      - name: Upload narration video
         uses: actions/upload-artifact@v4
         with:
-          name: narration_audio
-          path: narration.mp3
+          name: narration_video
+          path: narration_video.mp4
