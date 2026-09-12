@@ -1,25 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-Xuat audio nhanh cho 1 doan van xuoi don gian (khong can dinh dang script
-day du voi nhan vat/canh) - dung khi chi can lay 1 doan lien tuc, giong nu.
+Xuat audio nhanh cho 1 doan van xuoi don gian (giong nu), sau do tu dong
+ghep vao 1 video nen den (khong can anh/video nao khac) - dung khi chi
+can file video co tieng, khong can file audio rieng.
 
 Doc noi dung tu file "narration_text.txt" neu co (de chay qua trang web/
 GitHub Actions), neu khong co thi dung doan van mac dinh ben duoi (de test
 nhanh tren may).
 
-Cai dat: pip install edge-tts
+Cai dat: pip install edge-tts moviepy
 Chay:    python generate_simple_audio.py
 """
 
 import asyncio
 import os
 import edge_tts
+from moviepy import ColorClip, AudioFileClip
 
 VOICE = "en-US-AnaNeural"   # giong nu, tre, cute
 RATE = "+8%"
 PITCH = "+0Hz"
-OUTPUT_FILE = "narration.mp3"
+AUDIO_FILE = "narration.mp3"
+VIDEO_FILE = "narration_video.mp4"
 TEXT_FILE = "narration_text.txt"
+
+VIDEO_SIZE = (1280, 720)   # doi kich thuoc video o day neu can (vd doc: (720,1280))
 
 DEFAULT_TEXT = """Today, I wanted something warm and comforting, so I decided to make Japanese chicken curry.
 I started with some chicken, carrots, onions, and potatoes. First, I browned the chicken until it got a little golden on the outside.
@@ -38,12 +43,31 @@ def load_text():
     return DEFAULT_TEXT
 
 
+async def synth(text):
+    communicate = edge_tts.Communicate(text, VOICE, rate=RATE, pitch=PITCH)
+    await communicate.save(AUDIO_FILE)
+
+
+def make_black_video():
+    audio = AudioFileClip(AUDIO_FILE)
+    video = ColorClip(size=VIDEO_SIZE, color=(0, 0, 0), duration=audio.duration)
+    video = video.with_audio(audio)
+    video.write_videofile(
+        VIDEO_FILE,
+        fps=24,
+        codec="libx264",
+        audio_codec="aac",
+        ffmpeg_params=["-pix_fmt", "yuv420p"],
+    )
+
+
 async def main():
     text = load_text()
     print(f"Dang doc: {text[:60]}...")
-    communicate = edge_tts.Communicate(text, VOICE, rate=RATE, pitch=PITCH)
-    await communicate.save(OUTPUT_FILE)
-    print(f"Hoan tat! Da luu: {OUTPUT_FILE}")
+    await synth(text)
+    print(f"Da tao audio: {AUDIO_FILE}")
+    make_black_video()
+    print(f"Hoan tat! Video: {VIDEO_FILE}")
 
 
 if __name__ == "__main__":
