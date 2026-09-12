@@ -222,6 +222,7 @@
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button type="button" class="proj-btn" id="projChinese" style="flex:1; min-width:160px; padding:10px; border-radius:8px; border:2px solid var(--gold); background:#fff8ea; font-weight:600; cursor:pointer;">🀄 Tiếng Trung</button>
       <button type="button" class="proj-btn" id="projMelloday" style="flex:1; min-width:160px; padding:10px; border-radius:8px; border:2px solid var(--line); background:#fff; font-weight:600; cursor:pointer;">🐾 Melloday Kids</button>
+      <button type="button" class="proj-btn" id="projNarration" style="flex:1; min-width:160px; padding:10px; border-radius:8px; border:2px solid var(--line); background:#fff; font-weight:600; cursor:pointer;">🎙️ Audio giọng nữ</button>
     </div>
     <p class="hint" style="margin:8px 0 0;">Bấm chọn đúng dự án — công cụ tự đổi file workflow + loại file chấp nhận cho bạn, khỏi cần vào "Cài đặt nâng cao" sửa tay.</p>
   </div>
@@ -262,12 +263,23 @@
   <div class="col-left">
   <div class="card">
     <h2><span class="num">2</span><span id="section2Title">Ảnh &amp; câu thoại</span></h2>
+    <div id="fileUploadSection">
     <label class="filebtn" id="combinedFileBtn" style="display:flex; justify-content:center; padding:22px; font-size:14px;">
       <span id="section2FileHint">📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)</span>
       <input type="file" id="combinedInput" accept=".zip,.txt,.csv,.png,.jpg,.jpeg,.mp4" multiple>
     </label>
     <div class="preview" id="combinedPreview" style="display:none"></div>
     <button class="secondary" id="clearFilesBtn" style="display:none; margin-top:6px; padding:7px; font-size:12.5px;">✕ Xoá file đã chọn, chọn lại</button>
+    </div>
+
+    <div id="narrationSection" style="display:none;">
+      <p class="hint">Dán hoặc gõ đoạn văn cần đọc thành giọng nữ vào đây.</p>
+      <textarea id="narrationText" style="min-height:180px" placeholder="Today, I wanted something warm and comforting..."></textarea>
+      <label class="filebtn" style="display:flex; justify-content:center; padding:14px; font-size:13px; margin-top:10px;">
+        📄 Hoặc tải file .txt lên thay vì gõ tay
+        <input type="file" id="narrationFileInput" accept=".txt">
+      </label>
+    </div>
     <button class="secondary" id="previewBtn" style="margin-top:10px">👁️ Xem trước phụ đề</button>
     <div id="previewPanel" style="display:none; margin-top:14px; text-align:center;">
       <canvas id="previewCanvas" style="max-width:100%; border:1px solid var(--line); border-radius:8px;"></canvas>
@@ -351,6 +363,7 @@ const PROJECTS = {
     hint: "📁 Chọn file (ảnh gộp .png/.jpg hoặc zip 30 ảnh + .txt/.csv câu thoại)",
     pathLabel: "Đường dẫn ảnh",
     showDialogueUI: true,
+    mode: "file",
   },
   melloday: {
     workflowFile: "melloday.yml",
@@ -359,31 +372,51 @@ const PROJECTS = {
     hint: "📁 Chọn video (.mp4) hoặc ảnh (.zip/.png/.jpg) + script (.md) cùng lúc",
     pathLabel: "Đường dẫn video/ảnh",
     showDialogueUI: false,
+    mode: "file",
+  },
+  narration: {
+    workflowFile: "simple-audio.yml",
+    accept: "",
+    title: "Nội dung cần đọc",
+    hint: "",
+    pathLabel: "",
+    showDialogueUI: false,
+    mode: "narration",
   },
 };
 
 function setActiveProject(key) {
   const cfg = PROJECTS[key];
   $("workflowFile").value = cfg.workflowFile;
-  $("combinedInput").setAttribute("accept", cfg.accept);
+  if (cfg.mode === "file") $("combinedInput").setAttribute("accept", cfg.accept);
   localStorage.setItem("dlg_activeProject", key);
 
-  ["projChinese", "projMelloday"].forEach((id, i) => {
-    const k = ["chinese", "melloday"][i];
+  ["projChinese", "projMelloday", "projNarration"].forEach((id, i) => {
+    const k = ["chinese", "melloday", "narration"][i];
     $(id).style.borderColor = key === k ? "var(--gold)" : "var(--line)";
     $(id).style.background = key === k ? "#fff8ea" : "#fff";
   });
 
+  $("fileUploadSection").style.display = cfg.mode === "file" ? "" : "none";
+  $("narrationSection").style.display = cfg.mode === "narration" ? "" : "none";
+
   $("section2Title").textContent = cfg.title;
   $("section2FileHint").textContent = cfg.hint;
-  $("imagePathLabel").textContent = cfg.pathLabel;
-  $("dialoguePathWrap").style.display = cfg.showDialogueUI ? "" : "none";
-  $("dialogueOnlySection").style.display = cfg.showDialogueUI ? "" : "none";
-  $("previewBtn").style.display = cfg.showDialogueUI ? "" : "none";
+  if (cfg.mode === "file") {
+    $("imagePathLabel").textContent = cfg.pathLabel;
+    $("dialoguePathWrap").style.display = cfg.showDialogueUI ? "" : "none";
+    $("dialogueOnlySection").style.display = cfg.showDialogueUI ? "" : "none";
+    $("previewBtn").style.display = cfg.showDialogueUI ? "" : "none";
+  } else {
+    $("dialoguePathWrap").style.display = "none";
+    $("dialogueOnlySection").style.display = "none";
+    $("previewBtn").style.display = "none";
+  }
 }
 
 $("projChinese").addEventListener("click", () => setActiveProject("chinese"));
 $("projMelloday").addEventListener("click", () => setActiveProject("melloday"));
+$("projNarration").addEventListener("click", () => setActiveProject("narration"));
 
 // Khoi phuc lua chon du an tu lan truoc (mac dinh: tieng Trung)
 setActiveProject(localStorage.getItem("dlg_activeProject") || "chinese");
@@ -897,6 +930,9 @@ function resetAll() {
   $("lines").value = "";
   renderPreview();
 
+  $("narrationText").value = "";
+  $("narrationFileInput").value = "";
+
   $("steps").className = "steps";
   ["step-img", "step-txt", "step-script", "step-run", "step-dl"].forEach(id => setStep(id, ""));
   const statusEl = $("status");
@@ -1096,6 +1132,20 @@ async function pushAllScriptFiles(owner, repo, branch, token) {
   return { skipped: false, files: results, errors: errors.length ? errors : undefined };
 }
 
+$("narrationFileInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await readTextFile(file);
+  $("narrationText").value = text;
+});
+
+async function pushNarrationText(owner, repo, branch, token) {
+  const text = $("narrationText").value.trim();
+  if (!text) return { skipped: true };
+  const r = await pushGenericFile(owner, repo, branch, token, "narration_text.txt", text);
+  return { skipped: false, path: r.path, commitUrl: r.commitUrl, isNarration: true };
+}
+
 async function pushMdScript(owner, repo, branch, token) {
   if (!selectedMdContent) return { skipped: true };
   const r = await pushGenericFile(owner, repo, branch, token, selectedMdName, selectedMdContent);
@@ -1205,8 +1255,8 @@ $("pushAllBtn").addEventListener("click", async () => {
     showStatus("err", "Điền đủ tên tài khoản, tên repo, và token ở mục 1 trước đã.");
     return;
   }
-  if (!selectedZipFile && !parseLines($("lines").value).length && !selectedMdContent && !selectedScriptFiles.length) {
-    showStatus("err", "Chưa chọn ảnh, câu thoại, hay file script nào để cập nhật.");
+  if (!selectedZipFile && !parseLines($("lines").value).length && !selectedMdContent && !selectedScriptFiles.length && !$("narrationText").value.trim()) {
+    showStatus("err", "Chưa chọn ảnh, câu thoại, file script, hay nội dung nào để cập nhật.");
     return;
   }
 
@@ -1215,7 +1265,7 @@ $("pushAllBtn").addEventListener("click", async () => {
   btn.textContent = "Đang cập nhật...";
   $("steps").className = "steps show";
   setStep("step-img", selectedZipFile ? "pending" : "skip");
-  setStep("step-txt", (parseLines($("lines").value).length || selectedMdContent) ? "pending" : "skip");
+  setStep("step-txt", (parseLines($("lines").value).length || selectedMdContent || $("narrationText").value.trim()) ? "pending" : "skip");
   setStep("step-script", selectedScriptFiles.length ? "pending" : "skip");
   showStatus("ok", "Đang kết nối tới GitHub...");
 
@@ -1241,6 +1291,10 @@ $("pushAllBtn").addEventListener("click", async () => {
       setStep("step-txt", "ok");
     } else if (selectedMdContent) {
       const r = await pushMdScript(owner, repo, branch, token);
+      results.txt = r;
+      setStep("step-txt", "ok");
+    } else if ($("narrationText").value.trim()) {
+      const r = await pushNarrationText(owner, repo, branch, token);
       results.txt = r;
       setStep("step-txt", "ok");
     }
@@ -1271,7 +1325,9 @@ $("pushAllBtn").addEventListener("click", async () => {
     html += `Cập nhật ảnh thất bại: ${results.img.error}<br>`;
   }
   if (results.txt && !results.txt.error && !results.txt.skipped) {
-    if (results.txt.isMd) {
+    if (results.txt.isNarration) {
+      html += `Nội dung đã cập nhật vào <b>${results.txt.path}</b>. `;
+    } else if (results.txt.isMd) {
       html += `Script đã cập nhật vào <b>${results.txt.path}</b>. `;
     } else {
       html += `${results.txt.count} câu thoại đã cập nhật vào <b>${results.txt.path}</b>. `;
