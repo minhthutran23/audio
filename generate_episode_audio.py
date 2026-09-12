@@ -331,6 +331,9 @@ async def synth_line(text, speaker, parenthetical, out_path):
     await communicate.save(out_path)
 
 
+# Bat/tat hieu ung am thanh (SFX) tong hop o day - dat False neu nghe khong tu nhien
+ENABLE_SFX = False
+
 async def build_episode(scenes):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     os.makedirs(TEMP_DIR, exist_ok=True)
@@ -339,7 +342,8 @@ async def build_episode(scenes):
     scene_pause = AudioSegment.silent(duration=PAUSE_BETWEEN_SCENES_MS)
     line_pause = AudioSegment.silent(duration=PAUSE_BETWEEN_LINES_MS)
 
-    for scene_num, title, items in scenes:
+    for scene_num, title, all_items in scenes:
+        items = all_items if ENABLE_SFX else [it for it in all_items if it[0] != "sfx"]
         if not items:
             print(f"[Canh {scene_num:02d}] '{title}' - khong co thoai, bo qua.")
             continue
