@@ -1,0 +1,29 @@
+name: Generate Simple Narration Audio
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install edge-tts
+
+      - name: Generate narration audio
+        run: python generate_simple_audio.py
+
+      - name: Upload narration audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: narration_audio
+          path: narration.mp3
