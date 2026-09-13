@@ -56,7 +56,7 @@ OUTPUT_FILE = "story_video.mp4"
 
 # ---- CAC THAM SO BAN CO THE CHINH ----
 PAUSE_BETWEEN_SCENES = 1.0     # giay nghi giua cac canh (tang/giam so nay tuy y)
-TARGET_WIDTH = 720             # anh nho hon se duoc phong to len do net hon; anh to hon giu nguyen
+TARGET_WIDTH = 1080            # chieu rong video (1080 = Full HD). Anh nho hon se duoc phong to len.
 BG_MUSIC_FILE = "background_music.mp3"  # dat file nhac nen (mp3) o thu muc goc, khong co thi tu bo qua
 BG_MUSIC_VOLUME = 0.15         # am luong nhac nen (0.0 - 1.0), de nho hon loi thoai
 # ----------------------------------------
@@ -231,7 +231,12 @@ else:
         fps=24,
         codec="libx264",
         audio_codec="aac",
-        ffmpeg_params=["-pix_fmt", "yuv420p"],
+        audio_bitrate="192k",
+        ffmpeg_params=[
+            "-pix_fmt", "yuv420p",
+            "-crf", "18",          # chat luong cao (so cang nho cang net; 18 rat tot)
+            "-preset", "slow",     # nen ky hon, chat luong tot hon
+        ],
     )
     print(f"\nHoan tat! Video da luu tai: {OUTPUT_FILE}")
 
